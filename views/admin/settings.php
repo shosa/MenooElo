@@ -151,30 +151,66 @@ $content = ob_start();
                             <input type="hidden" name="csrf_token" value="<?= $csrf_token ?>">
                             <input type="hidden" name="section" value="branding">
                             
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">
-                                    Logo del Ristorante
-                                </label>
-                                <div class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-blue-600 bg-gray-50 transition-colors cursor-pointer" onclick="document.querySelector('input[name=logo]').click()">
-                                    <input type="file" name="logo" accept="image/*" class="hidden" onchange="previewLogo(this)">
-                                    
-                                    <?php if (isset($restaurant['logo_url']) && $restaurant['logo_url']): ?>
-                                    <div class="text-center">
-                                        <img src="<?= BASE_URL ?>/uploads/logos/<?= $restaurant['logo_url'] ?>" 
-                                             alt="Logo attuale" 
-                                             class="mx-auto rounded-lg shadow-sm max-w-32 max-h-32 object-contain mb-4" id="logoPreview">
-                                        <p class="text-gray-600">Click per cambiare logo</p>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <!-- Logo Section -->
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                        Logo del Ristorante
+                                    </label>
+                                    <div class="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-blue-600 bg-gray-50 transition-colors cursor-pointer" onclick="document.querySelector('input[name=logo]').click()">
+                                        <input type="file" name="logo" accept="image/*" class="hidden" onchange="previewImage(this, 'logoPreview')">
+                                        
+                                        <?php if (isset($restaurant['logo_url']) && $restaurant['logo_url']): ?>
+                                        <div class="text-center">
+                                            <img src="<?= BASE_URL ?>/uploads/logos/<?= $restaurant['logo_url'] ?>" 
+                                                 alt="Logo attuale" 
+                                                 class="mx-auto rounded-lg shadow-sm max-w-24 max-h-24 object-contain mb-3" id="logoPreview">
+                                            <p class="text-gray-600 text-sm mb-2">Click per cambiare</p>
+                                            <button type="button" onclick="removeLogo()" 
+                                                    class="text-red-600 hover:text-red-800 text-sm font-medium">
+                                                <i class="fas fa-trash mr-1"></i>Rimuovi Logo
+                                            </button>
+                                        </div>
+                                        <?php else: ?>
+                                        <div class="text-center text-gray-500">
+                                            <i class="fas fa-image text-3xl mb-3"></i>
+                                            <p class="font-medium text-sm">Carica Logo</p>
+                                            <img class="mx-auto rounded-lg shadow-sm max-w-24 max-h-24 object-contain mt-3 hidden" id="logoPreview">
+                                        </div>
+                                        <?php endif; ?>
                                     </div>
-                                    <?php else: ?>
-                                    <div class="text-center text-gray-500">
-                                        <i class="fas fa-image text-4xl mb-4"></i>
-                                        <p class="font-medium">Click per caricare un logo</p>
-                                        <p class="text-sm">o trascina qui il file</p>
-                                        <img class="mx-auto rounded-lg shadow-sm max-w-32 max-h-32 object-contain mt-4 hidden" id="logoPreview">
-                                    </div>
-                                    <?php endif; ?>
+                                    <p class="text-xs text-gray-500 mt-2">Quadrato preferibilmente, max 2MB</p>
                                 </div>
-                                <p class="text-sm text-gray-500 mt-2">Logo quadrato preferibilmente, max 2MB. Formati: JPG, PNG, WEBP.</p>
+
+                                <!-- Banner Section -->
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                        Banner del Ristorante
+                                    </label>
+                                    <div class="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-blue-600 bg-gray-50 transition-colors cursor-pointer" onclick="document.querySelector('input[name=banner]').click()">
+                                        <input type="file" name="banner" accept="image/*" class="hidden" onchange="previewImage(this, 'bannerPreview')">
+                                        
+                                        <?php if (isset($restaurant['cover_image_url']) && $restaurant['cover_image_url']): ?>
+                                        <div class="text-center">
+                                            <img src="<?= BASE_URL ?>/uploads/banners/<?= $restaurant['cover_image_url'] ?>" 
+                                                 alt="Banner attuale" 
+                                                 class="mx-auto rounded-lg shadow-sm max-w-full h-16 object-cover mb-3" id="bannerPreview">
+                                            <p class="text-gray-600 text-sm mb-2">Click per cambiare</p>
+                                            <button type="button" onclick="removeBanner()" 
+                                                    class="text-red-600 hover:text-red-800 text-sm font-medium">
+                                                <i class="fas fa-trash mr-1"></i>Rimuovi Banner
+                                            </button>
+                                        </div>
+                                        <?php else: ?>
+                                        <div class="text-center text-gray-500">
+                                            <i class="fas fa-panorama text-3xl mb-3"></i>
+                                            <p class="font-medium text-sm">Carica Banner</p>
+                                            <img class="mx-auto rounded-lg shadow-sm max-w-full h-16 object-cover mt-3 hidden" id="bannerPreview">
+                                        </div>
+                                        <?php endif; ?>
+                                    </div>
+                                    <p class="text-xs text-gray-500 mt-2">Formato panoramico, max 5MB</p>
+                                </div>
                             </div>
                             
                             <div>
@@ -184,11 +220,11 @@ $content = ob_start();
                                 <div class="flex items-center gap-3">
                                     <input type="color" 
                                            name="primary_color" 
-                                           value="<?= $restaurant['primary_color'] ?? '#3b82f6' ?>"
+                                           value="<?= $restaurant['theme_color'] ?? '#3b82f6' ?>"
                                            class="w-16 h-10 border border-gray-300 rounded cursor-pointer">
                                     <input type="text" 
                                            name="primary_color_hex" 
-                                           value="<?= $restaurant['primary_color'] ?? '#3b82f6' ?>"
+                                           value="<?= $restaurant['theme_color'] ?? '#3b82f6' ?>"
                                            placeholder="#3b82f6"
                                            class="px-3 py-2 border border-gray-300 rounded-lg text-sm w-24">
                                     <span class="text-sm text-gray-500">Colore principale del menu</span>
@@ -382,11 +418,11 @@ $content = ob_start();
 </div>
 
 <script>
-function previewLogo(input) {
+function previewImage(input, previewId) {
     if (input.files && input.files[0]) {
         const reader = new FileReader();
         reader.onload = function(e) {
-            const preview = document.getElementById('logoPreview');
+            const preview = document.getElementById(previewId);
             preview.src = e.target.result;
             preview.classList.remove('hidden');
         };
@@ -404,6 +440,34 @@ document.querySelector('input[name="primary_color_hex"]').addEventListener('inpu
         document.querySelector('input[name="primary_color"]').value = this.value;
     }
 });
+
+// Remove logo function
+function removeLogo() {
+    if (confirm('Sei sicuro di voler rimuovere il logo?')) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.innerHTML = `
+            <input type="hidden" name="csrf_token" value="<?= $csrf_token ?>">
+            <input type="hidden" name="section" value="remove_logo">
+        `;
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+// Remove banner function
+function removeBanner() {
+    if (confirm('Sei sicuro di voler rimuovere il banner?')) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.innerHTML = `
+            <input type="hidden" name="csrf_token" value="<?= $csrf_token ?>">
+            <input type="hidden" name="section" value="remove_banner">
+        `;
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
 </script>
 
 <?php 

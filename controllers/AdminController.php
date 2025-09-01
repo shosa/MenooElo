@@ -950,49 +950,125 @@ class AdminController extends BaseController {
             if (!$this->validateCsrf($_POST['csrf_token'] ?? '')) {
                 $error = 'Token CSRF non valido';
             } else {
+                $section = $_POST['section'] ?? 'basic_info';
+                
                 try {
                     $data = $this->sanitizeInput($_POST);
                     
-                    $logoUrl = null;
-                    $coverUrl = null;
-                    
-                    if (isset($_FILES['logo']) && $_FILES['logo']['error'] === UPLOAD_ERR_OK) {
-                        $logoUrl = $this->uploadImage($_FILES['logo'], 'logos');
+                    if ($section === 'basic_info') {
+                        // Handle basic restaurant info update
+                        $this->db->update(
+                            "UPDATE restaurants SET name = ?, description = ?, address = ?, phone = ?, email = ? WHERE id = ?",
+                            [
+                                $data['name'], $data['description'], $data['address'],
+                                $data['phone'], $data['email'], $restaurantId
+                            ]
+                        );
+                        $success = 'Informazioni aggiornate con successo';
+                        
+                    } elseif ($section === 'branding') {
+                        // Handle branding updates (logo, banner, colors)
+                        $restaurant = $this->db->selectOne("SELECT logo_url, cover_image_url FROM restaurants WHERE id = ?", [$restaurantId]);
+                        
+                        $logoUrl = $restaurant['logo_url'];
+                        $coverUrl = $restaurant['cover_image_url'];
+                        
+                        // Handle logo upload
+                        if (isset($_FILES['logo']) && $_FILES['logo']['error'] === UPLOAD_ERR_OK) {
+                            $newLogoUrl = $this->uploadImage($_FILES['logo'], 'logos');
+                            // Delete old logo if exists
+                            if ($logoUrl && file_exists(UPLOADS_PATH . '/logos/' . $logoUrl)) {
+                                unlink(UPLOADS_PATH . '/logos/' . $logoUrl);
+                            }
+                            $logoUrl = $newLogoUrl;
+                        }
+                        
+                        // Handle banner upload
+                        if (isset($_FILES['banner']) && $_FILES['banner']['error'] === UPLOAD_ERR_OK) {
+                            $newCoverUrl = $this->uploadImage($_FILES['banner'], 'banners');
+                            // Delete old banner if exists
+                            if ($coverUrl && file_exists(UPLOADS_PATH . '/banners/' . $coverUrl)) {
+                                unlink(UPLOADS_PATH . '/banners/' . $coverUrl);
+                            }
+                            $coverUrl = $newCoverUrl;
+                        }
+                        
+                        $this->db->update(
+                            "UPDATE restaurants SET logo_url = ?, cover_image_url = ?, theme_color = ? WHERE id = ?",
+                            [
+                                $logoUrl, $coverUrl, 
+                                $data['primary_color'] ?? $data['primary_color_hex'] ?? '#3b82f6', 
+                                $restaurantId
+                            ]
+                        );
+                        $success = 'Logo e branding aggiornati con successo';
+                        
+                    } elseif ($section === 'opening_hours') {
+                        // Handle opening hours update
+                        $days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+                        $openingHours = [];
+                        
+                        foreach ($days as $day) {
+                            $openingHours[$day] = [
+                                'open' => isset($data[$day . '_open']),
+                                'open_time' => $data[$day . '_open_time'] ?? '12:00',
+                                'close_time' => $data[$day . '_close_time'] ?? '22:30'
+                            ];
+                        }
+                        
+                        $this->db->update(
+                            "UPDATE restaurants SET opening_hours = ? WHERE id = ?",
+                            [json_encode($openingHours), $restaurantId]
+                        );
+                        $success = 'Orari di apertura aggiornati con successo';
+                        
+                    } elseif ($section === 'menu_status') {
+                        // Handle menu visibility settings
+                        $features = [
+                            'show_prices' => isset($data['show_prices']),
+                            'show_descriptions' => isset($data['show_descriptions']),
+                            'show_images' => isset($data['show_images'])
+                        ];
+                        
+                        $this->db->update(
+                            "UPDATE restaurants SET features = ? WHERE id = ?",
+                            [json_encode($features), $restaurantId]
+                        );
+                        $success = 'Impostazioni menu aggiornate con successo';
+                        
+                    } elseif ($section === 'remove_logo') {
+                        // Remove logo
+                        $restaurant = $this->db->selectOne("SELECT logo_url FROM restaurants WHERE id = ?", [$restaurantId]);
+                        if ($restaurant['logo_url']) {
+                            // Delete physical file
+                            if (file_exists(UPLOADS_PATH . '/logos/' . $restaurant['logo_url'])) {
+                                unlink(UPLOADS_PATH . '/logos/' . $restaurant['logo_url']);
+                            }
+                            // Update database
+                            $this->db->update(
+                                "UPDATE restaurants SET logo_url = NULL WHERE id = ?",
+                                [$restaurantId]
+                            );
+                        }
+                        $success = 'Logo rimosso con successo';
+                        
+                    } elseif ($section === 'remove_banner') {
+                        // Remove banner
+                        $restaurant = $this->db->selectOne("SELECT cover_image_url FROM restaurants WHERE id = ?", [$restaurantId]);
+                        if ($restaurant['cover_image_url']) {
+                            // Delete physical file
+                            if (file_exists(UPLOADS_PATH . '/banners/' . $restaurant['cover_image_url'])) {
+                                unlink(UPLOADS_PATH . '/banners/' . $restaurant['cover_image_url']);
+                            }
+                            // Update database
+                            $this->db->update(
+                                "UPDATE restaurants SET cover_image_url = NULL WHERE id = ?",
+                                [$restaurantId]
+                            );
+                        }
+                        $success = 'Banner rimosso con successo';
                     }
                     
-                    if (isset($_FILES['cover_image']) && $_FILES['cover_image']['error'] === UPLOAD_ERR_OK) {
-                        $coverUrl = $this->uploadImage($_FILES['cover_image'], 'covers');
-                    }
-                    
-                    $updateFields = [
-                        'name = ?', 'description = ?', 'address = ?', 'phone = ?', 
-                        'email = ?', 'website = ?', 'social_facebook = ?', 
-                        'social_instagram = ?', 'theme_color = ?'
-                    ];
-                    $updateParams = [
-                        $data['name'], $data['description'], $data['address'],
-                        $data['phone'], $data['email'], $data['website'],
-                        $data['social_facebook'], $data['social_instagram'], $data['theme_color']
-                    ];
-                    
-                    if ($logoUrl) {
-                        $updateFields[] = 'logo_url = ?';
-                        $updateParams[] = $logoUrl;
-                    }
-                    
-                    if ($coverUrl) {
-                        $updateFields[] = 'cover_image_url = ?';
-                        $updateParams[] = $coverUrl;
-                    }
-                    
-                    $updateParams[] = $restaurantId;
-                    
-                    $this->db->update(
-                        "UPDATE restaurants SET " . implode(', ', $updateFields) . " WHERE id = ?",
-                        $updateParams
-                    );
-                    
-                    $success = 'Impostazioni aggiornate con successo';
                 } catch (Exception $e) {
                     $error = $e->getMessage();
                 }
@@ -1009,6 +1085,35 @@ class AdminController extends BaseController {
             'success' => $success ?? null,
             'csrf_token' => $csrf_token
         ]);
+    }
+    
+    protected function uploadImage($file, $directory = 'general') {
+        $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+        $maxSize = ($directory === 'banners') ? 5 * 1024 * 1024 : 2 * 1024 * 1024; // 5MB for banners, 2MB for logos
+        
+        if (!in_array($file['type'], $allowedTypes)) {
+            throw new Exception('Formato file non supportato. Usa JPG, PNG o WEBP.');
+        }
+        
+        if ($file['size'] > $maxSize) {
+            $maxSizeMB = $maxSize / (1024 * 1024);
+            throw new Exception("File troppo grande. Massimo {$maxSizeMB}MB consentiti.");
+        }
+        
+        $uploadDir = UPLOADS_PATH . '/' . $directory . '/';
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0755, true);
+        }
+        
+        $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+        $filename = uniqid() . '_' . time() . '.' . strtolower($extension);
+        $filepath = $uploadDir . $filename;
+        
+        if (!move_uploaded_file($file['tmp_name'], $filepath)) {
+            throw new Exception('Errore durante il caricamento del file.');
+        }
+        
+        return $filename;
     }
 }
 ?>

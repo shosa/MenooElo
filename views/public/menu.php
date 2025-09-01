@@ -129,7 +129,7 @@ img {
 
 <!-- Order Floating Button -->
 <button id="order-summary-btn" 
-        class="fixed bottom-6 right-6 z-50 rounded-full p-4 hover:scale-110 transition-all duration-300 shadow-2xl animate-pulse-glow hidden"
+        class="fixed bottom-6 right-6 z-50 rounded-full p-4 hover:scale-110 transition-all duration-300 shadow-2xl animate-pulse-glow hidden border border-white"
         style="background: var(--theme-color);"
         onclick="openOrderModal()">
     <div class="flex items-center gap-3">
@@ -325,15 +325,19 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <!-- Restaurant Header -->
-<section class="relative bg-gray-900 overflow-hidden theme-gradient min-h-screen flex items-center justify-center">
-    <!-- Background Image -->
-    <?php if ($restaurant['cover_image_url']): ?>
+<section class="relative bg-gray-900 overflow-hidden min-h-screen flex items-center justify-center">
+    <?php if (isset($restaurant['cover_image_url']) && $restaurant['cover_image_url']): ?>
+    <!-- Background Banner with Blur -->
     <div class="absolute inset-0">
-        <img src="<?= BASE_URL ?>/uploads/<?= $restaurant['cover_image_url'] ?>" 
+        <img src="<?= BASE_URL ?>/uploads/banners/<?= $restaurant['cover_image_url'] ?>" 
              alt="<?= htmlspecialchars($restaurant['name']) ?>"
-             class="w-full h-full object-cover opacity-30">
-        <div class="absolute inset-0 bg-gradient-to-br from-black/40 via-transparent to-black/60"></div>
+             class="w-full h-full object-cover">
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
+        <div class="absolute inset-0 theme-gradient opacity-20"></div>
     </div>
+    <?php else: ?>
+    <!-- Gradient Background when no banner -->
+    <div class="absolute inset-0 theme-gradient"></div>
     <?php endif; ?>
     
     <!-- Content -->
@@ -342,12 +346,12 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="max-w-4xl">
                 <div class="flex flex-col lg:flex-row items-center lg:items-start gap-8">
                     <!-- Logo -->
-                    <?php if ($restaurant['logo_url']): ?>
-                    <div class="flex-shrink-0 animate-bounceIn" style="animation-delay: 0.3s;">
-                        <div class="w-32 h-32 lg:w-40 lg:h-40 rounded-2xl overflow-hidden shadow-2xl bg-white p-2 animate-float">
-                            <img src="<?= BASE_URL ?>/uploads/<?= $restaurant['logo_url'] ?>" 
+                    <?php if (isset($restaurant['logo_url']) && $restaurant['logo_url']): ?>
+                    <div class="flex-shrink-0 animate-fadeInUp" style="animation-delay: 0.3s;">
+                        <div class="w-32 h-32 lg:w-40 lg:h-40 rounded-2xl overflow-hidden shadow-2xl bg-white p-2">
+                            <img src="<?= BASE_URL ?>/uploads/logos/<?= $restaurant['logo_url'] ?>" 
                                  alt="<?= htmlspecialchars($restaurant['name']) ?>"
-                                 class="w-full h-full object-cover rounded-xl">
+                                 class="w-full h-full object-contain rounded-xl">
                         </div>
                     </div>
                     <?php endif; ?>
