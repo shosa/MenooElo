@@ -1,0 +1,39 @@
+# Development files
+.DS_Store
+.vscode/
+.idea/
+
+# Configuration files (keep template)
+config/config.php
+
+# Uploaded files
+uploads/*
+!uploads/.gitkeep
+
+# Installation file (for security)
+install.php
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/
+
+# Backup files
+*.bak
+*.backup
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+
+# Cache
+cache/
+
+# Node modules (if used)
+node_modules/
+
+# Composer (if used)
+vendor/
