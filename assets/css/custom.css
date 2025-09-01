@@ -80,7 +80,7 @@
     
     /* Admin Layout */
     .admin-layout {
-        @apply flex min-h-screen bg-base-200;
+        @apply flex min-h-screen bg-base-200 overflow-x-hidden;
     }
     
     .admin-sidebar {
@@ -88,7 +88,7 @@
     }
     
     .admin-content {
-        @apply flex-1 overflow-x-auto;
+        @apply flex-1 overflow-x-hidden min-w-0;
     }
     
     .content-header {
@@ -123,6 +123,10 @@
     /* Tables */
     .table-wrapper {
         @apply bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100;
+    }
+    
+    .table-responsive {
+        @apply overflow-x-auto -mx-6 px-6;
     }
     
     .table {
@@ -274,5 +278,34 @@
     
     .mobile-only {
         @apply block lg:hidden;
+    }
+    
+    /* Responsive utilities */
+    .prevent-overflow {
+        @apply overflow-x-hidden min-w-0;
+    }
+    
+    .full-width-mobile {
+        @apply w-full min-w-0;
+    }
+    
+    /* Safe area for mobile tables */
+    .mobile-table-container {
+        @apply overflow-x-auto -mx-4 px-4 sm:-mx-6 sm:px-6;
+    }
+    
+    /* Force text wrapping to prevent overflow */
+    .force-wrap {
+        @apply break-words overflow-wrap-anywhere;
+    }
+    
+    /* Ensure cards don't overflow */
+    .responsive-card {
+        @apply min-w-0 max-w-full;
+    }
+    
+    /* Mobile-friendly buttons */
+    .mobile-btn-group {
+        @apply flex flex-wrap gap-2 justify-start sm:justify-end;
     }
 }

@@ -205,7 +205,7 @@ $content = ob_start();
                     <div class="flex items-center gap-4 mb-4">
                         <?php if ($restaurant['logo_url']): ?>
                         <div class="flex-shrink-0 w-12 h-12 rounded-full overflow-hidden bg-gray-100">
-                            <img src="<?= BASE_URL ?>/uploads/logos/<?= $restaurant['logo_url'] ?>" 
+                            <img src="<?= BASE_URL ?>/uploads/<?= $restaurant['logo_url'] ?>" 
                                  alt="<?= htmlspecialchars($restaurant['name']) ?>"
                                  class="w-full h-full object-cover">
                         </div>

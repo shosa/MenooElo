@@ -329,7 +329,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <?php if (isset($restaurant['cover_image_url']) && $restaurant['cover_image_url']): ?>
     <!-- Background Banner with Blur -->
     <div class="absolute inset-0">
-        <img src="<?= BASE_URL ?>/uploads/banners/<?= $restaurant['cover_image_url'] ?>" 
+        <img src="<?= BASE_URL ?>/uploads/<?= $restaurant['cover_image_url'] ?>" 
              alt="<?= htmlspecialchars($restaurant['name']) ?>"
              class="w-full h-full object-cover">
         <div class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
@@ -349,7 +349,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <?php if (isset($restaurant['logo_url']) && $restaurant['logo_url']): ?>
                     <div class="flex-shrink-0 animate-fadeInUp" style="animation-delay: 0.3s;">
                         <div class="w-32 h-32 lg:w-40 lg:h-40 rounded-2xl overflow-hidden shadow-2xl bg-white p-2">
-                            <img src="<?= BASE_URL ?>/uploads/logos/<?= $restaurant['logo_url'] ?>" 
+                            <img src="<?= BASE_URL ?>/uploads/<?= $restaurant['logo_url'] ?>" 
                                  alt="<?= htmlspecialchars($restaurant['name']) ?>"
                                  class="w-full h-full object-contain rounded-xl">
                         </div>

@@ -2,10 +2,10 @@
 $content = ob_start(); 
 ?>
 
-<div class="flex min-h-screen bg-gray-100">
+<div class="flex min-h-screen bg-gray-100 overflow-x-hidden">
     <?php include 'views/superadmin/_sidebar.php'; ?>
     
-    <div class="flex-1 lg:ml-0">
+    <div class="flex-1 lg:ml-0 min-w-0">
         <!-- Header -->
         <div class="bg-white px-6 py-4 border-b border-gray-200">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -125,8 +125,8 @@ $content = ob_start();
                         </a>
                     </div>
                     <?php else: ?>
-                    <div class="overflow-x-auto">
-                        <table class="w-full">
+                    <div class="overflow-x-auto -mx-6 px-6">
+                        <table class="w-full min-w-full">
                             <thead class="bg-gray-50 border-b border-gray-200">
                                 <tr>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ristorante</th>

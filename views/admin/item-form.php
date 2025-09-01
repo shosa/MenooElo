@@ -449,12 +449,14 @@ function displayImageSuggestions(images) {
             </div>
         `;
         
-        // Add click event listener
-        const imgElement = imageItem.querySelector('.suggestion-image');
-        imgElement.addEventListener('click', function() {
-            console.log('🔥 Image clicked! Index:', index);
-            selectSuggestedImage(image);
-        });
+        // Add click event listener to the container
+        const imgContainer = imageItem.querySelector('.suggestion-image-container');
+        if (imgContainer) {
+            imgContainer.addEventListener('click', function() {
+                console.log('🔥 Image clicked! Index:', index);
+                selectSuggestedImage(image);
+            });
+        }
         
         gridDiv.appendChild(imageItem);
     });
@@ -495,11 +497,14 @@ async function selectSuggestedImage(imageData) {
             const previewImage = document.getElementById('previewImage');
             const previewImageContainer = document.getElementById('previewImageContainer');
             
-            const imageUrl = data.external_url || data.url;
+            const imageUrl = data.external_url || data.url || imageData.url;
+            console.log('🖼️ Using image URL:', imageUrl);
             
             if (imagePreview) {
                 imagePreview.src = imageUrl;
                 imagePreview.classList.remove('hidden');
+                // Also clear any previous file selection
+                document.querySelector('input[name="image"]').value = '';
             }
             if (previewImage) {
                 previewImage.src = imageUrl;
@@ -507,13 +512,13 @@ async function selectSuggestedImage(imageData) {
             }
             
             // Store image data for form submission
-            document.getElementById('selectedSuggestionImage').value = JSON.stringify(data.image_data);
+            document.getElementById('selectedSuggestionImage').value = JSON.stringify(data.image_data || imageData);
             
             // Show success message
             showSuccessMessage('Immagine selezionata con successo!');
             
             // Hide suggestions and show success state with attribution
-            showImageSelectedState(data.image_data);
+            showImageSelectedState(data.image_data || imageData);
         } else {
             throw new Error(data.error || 'Errore durante la selezione dell\'immagine');
         }
