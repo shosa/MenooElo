@@ -30,9 +30,9 @@ $content = ob_start();
                             <i class="fas fa-utensils text-xl group-hover:rotate-12 transition-transform duration-300"></i>
                             <span>Scopri i Menu</span>
                         </a>
-                        <a href="<?= BASE_URL ?>/superadmin/login" class="group inline-flex items-center justify-center gap-3 px-8 py-4 border-2 border-white text-white rounded-xl font-semibold text-lg hover:bg-white hover:text-blue-700 transition-all duration-300 transform hover:scale-105">
+                        <a href="<?= BASE_URL ?>/admin/login" class="group inline-flex items-center justify-center gap-3 px-8 py-4 border-2 border-white text-white rounded-xl font-semibold text-lg hover:bg-white hover:text-blue-700 transition-all duration-300 transform hover:scale-105">
                             <i class="fas fa-user-shield text-xl group-hover:rotate-12 transition-transform duration-300"></i>
-                            <span>Area Admin</span>
+                            <span>Accedi</span>
                         </a>
                     </div>
                 </div>
@@ -93,7 +93,7 @@ $content = ob_start();
 </section>
 
 <!-- Features Section -->
-<section class="py-20 bg-gray-50">
+<section class="py-20 bg-gray-50" id="why">
     <div class="container mx-auto px-6 lg:px-8">
         <div class="text-center mb-16">
             <h2 class="text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
@@ -205,7 +205,7 @@ $content = ob_start();
                     <div class="flex items-center gap-4 mb-4">
                         <?php if ($restaurant['logo_url']): ?>
                         <div class="flex-shrink-0 w-12 h-12 rounded-full overflow-hidden bg-gray-100">
-                            <img src="<?= BASE_URL ?>/uploads/<?= $restaurant['logo_url'] ?>" 
+                            <img src="<?= BASE_URL ?>/uploads/logos/<?= $restaurant['logo_url'] ?>" 
                                  alt="<?= htmlspecialchars($restaurant['name']) ?>"
                                  class="w-full h-full object-cover">
                         </div>
@@ -353,10 +353,9 @@ $content = ob_start();
             <div>
                 <h4 class="text-lg font-semibold text-white mb-6">Prodotto</h4>
                 <ul class="space-y-3">
-                    <li><a href="#" class="text-gray-400 hover:text-white transition-colors duration-200">Funzionalità</a></li>
-                    <li><a href="#" class="text-gray-400 hover:text-white transition-colors duration-200">Prezzi</a></li>
+                    <li><a href="#why" class="text-gray-400 hover:text-white transition-colors duration-200">Funzionalità</a></li>
                     <li><a href="#featured" class="text-gray-400 hover:text-white transition-colors duration-200">Demo</a></li>
-                    <li><a href="#" class="text-gray-400 hover:text-white transition-colors duration-200">Integrazioni</a></li>
+                    <li><a href="<?= BASE_URL ?>/superadmin/login" class="text-gray-400 hover:text-white transition-colors duration-200">Amministrazione</a></li>
                 </ul>
             </div>
             

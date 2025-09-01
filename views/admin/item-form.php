@@ -111,26 +111,62 @@ $content = ob_start();
                                 <label class="block text-sm font-semibold text-gray-700 mb-2">
                                     Immagine Piatto
                                 </label>
-                                <div class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-blue-600 bg-gray-50 transition-colors cursor-pointer" onclick="document.querySelector('input[name=image]').click()">
-                                    <input type="file" name="image" accept="image/*" class="hidden" onchange="previewImage(this)">
+                                
+                                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                    <!-- Upload Section -->
+                                    <div>
+                                        <h3 class="text-sm font-medium text-gray-700 mb-3">Carica dal Computer</h3>
+                                        <div class="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-blue-600 bg-gray-50 transition-colors cursor-pointer" onclick="document.querySelector('input[name=image]').click()">
+                                            <input type="file" name="image" accept="image/*" class="hidden" onchange="previewImage(this)">
+                                            <input type="hidden" name="selected_suggestion_image" id="selectedSuggestionImage">
+                                            
+                                            <?php if (isset($item['image_url']) && $item['image_url']): ?>
+                                            <div class="text-center">
+                                                <img src="<?= BASE_URL ?>/uploads/<?= $item['image_url'] ?>" 
+                                                     alt="Immagine piatto" 
+                                                     class="mx-auto rounded-lg shadow-sm max-w-full max-h-32 object-cover mb-3" id="imagePreview">
+                                                <p class="text-gray-600 text-sm">Click per cambiare</p>
+                                            </div>
+                                            <?php else: ?>
+                                            <div class="text-center text-gray-500">
+                                                <i class="fas fa-cloud-upload-alt text-3xl mb-3"></i>
+                                                <p class="font-medium text-sm">Carica Immagine</p>
+                                                <p class="text-xs">o trascina qui il file</p>
+                                                <img class="mx-auto rounded-lg shadow-sm max-w-full max-h-32 object-cover mt-3 hidden" id="imagePreview">
+                                            </div>
+                                            <?php endif; ?>
+                                        </div>
+                                        <p class="text-xs text-gray-500 mt-2">JPG, PNG, WEBP. Max 5MB.</p>
+                                    </div>
                                     
-                                    <?php if (isset($item['image_url']) && $item['image_url']): ?>
-                                    <div class="text-center">
-                                        <img src="<?= BASE_URL ?>/uploads/<?= $item['image_url'] ?>" 
-                                             alt="Immagine piatto" 
-                                             class="mx-auto rounded-lg shadow-sm max-w-64 max-h-48 object-cover mb-4" id="imagePreview">
-                                        <p class="text-gray-600">Click per cambiare immagine</p>
+                                    <!-- Image Suggestions Section -->
+                                    <div>
+                                        <div class="flex items-center justify-between mb-3">
+                                            <h3 class="text-sm font-medium text-gray-700">Suggerimenti AI</h3>
+                                            <button type="button" onclick="searchSuggestedImages()" 
+                                                    class="text-xs bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700 transition-colors">
+                                                <i class="fas fa-search mr-1"></i>Cerca
+                                            </button>
+                                        </div>
+                                        
+                                        <div class="border border-gray-200 rounded-xl p-4 bg-gray-50">
+                                            <div id="imageSuggestions" class="text-center text-gray-500 text-sm">
+                                                <i class="fas fa-magic mb-2 text-2xl"></i>
+                                                <p>Inserisci il nome del piatto e clicca "Cerca" per vedere suggerimenti di immagini</p>
+                                            </div>
+                                            
+                                            <!-- Loading State -->
+                                            <div id="suggestionsLoading" class="text-center text-gray-500 text-sm hidden">
+                                                <i class="fas fa-spinner fa-spin mb-2 text-2xl"></i>
+                                                <p>Cercando immagini suggerite...</p>
+                                            </div>
+                                            
+                                            <!-- Suggestions Grid - Migliorato -->
+                                            <div id="suggestionsGrid" class="grid grid-cols-2 gap-3 hidden"></div>
+                                        </div>
+                                        <p class="text-xs text-gray-500 mt-2">Clicca su un'immagine per selezionarla</p>
                                     </div>
-                                    <?php else: ?>
-                                    <div class="text-center text-gray-500">
-                                        <i class="fas fa-cloud-upload-alt text-4xl mb-4"></i>
-                                        <p class="font-medium">Click per caricare un'immagine</p>
-                                        <p class="text-sm">o trascina qui il file</p>
-                                        <img class="mx-auto rounded-lg shadow-sm max-w-64 max-h-48 object-cover mt-4 hidden" id="imagePreview">
-                                    </div>
-                                    <?php endif; ?>
                                 </div>
-                                <p class="text-sm text-gray-500 mt-2">Foto appetitosa del piatto. Formati: JPG, PNG, WEBP. Max 5MB.</p>
                             </div>
                             
                             <div>
@@ -324,6 +360,223 @@ function previewImage(input) {
         };
         reader.readAsDataURL(input.files[0]);
     }
+}
+
+// Image Suggestions Functions
+async function searchSuggestedImages() {
+    const nameInput = document.querySelector('input[name="name"]');
+    const query = nameInput.value.trim();
+    
+    if (!query) {
+        alert('Inserisci il nome del piatto per cercare suggerimenti di immagini');
+        nameInput.focus();
+        return;
+    }
+    
+    const suggestionsDiv = document.getElementById('imageSuggestions');
+    const loadingDiv = document.getElementById('suggestionsLoading');
+    const gridDiv = document.getElementById('suggestionsGrid');
+    
+    // Show loading state
+    suggestionsDiv.classList.add('hidden');
+    gridDiv.classList.add('hidden');
+    loadingDiv.classList.remove('hidden');
+    
+    try {
+        const response = await fetch(`<?= BASE_URL ?>/api/images/search?q=${encodeURIComponent(query)}`, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.images && data.images.length > 0) {
+            displayImageSuggestions(data.images);
+        } else {
+            showNoResultsMessage();
+        }
+    } catch (error) {
+        console.error('Error fetching image suggestions:', error);
+        showErrorMessage();
+    } finally {
+        loadingDiv.classList.add('hidden');
+    }
+}
+
+function displayImageSuggestions(images) {
+    const gridDiv = document.getElementById('suggestionsGrid');
+    
+    gridDiv.innerHTML = '';
+    
+    images.forEach((image, index) => {
+        const imageItem = document.createElement('div');
+        imageItem.className = 'relative group cursor-pointer';
+        
+        // Store image data in a global variable to avoid JSON encoding issues
+        window[`imageData_${index}`] = image;
+        
+        imageItem.innerHTML = `
+            <div class="suggestion-image-container border-2 border-gray-200 rounded-xl overflow-hidden hover:border-blue-500 hover:shadow-lg transition-all duration-200 cursor-pointer bg-white"
+                 data-index="${index}">
+                <img src="${image.thumb}" 
+                     alt="${image.description}"
+                     class="w-full h-32 sm:h-36 object-cover">
+                <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200 flex items-center justify-center">
+                    <div class="bg-white bg-opacity-90 rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                        <i class="fas fa-check text-blue-600 text-lg"></i>
+                    </div>
+                </div>
+                ${image.source === 'unsplash' ? `
+                    <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent text-white text-xs p-2">
+                        <div class="flex items-center gap-1">
+                            <i class="fas fa-camera text-xs opacity-75"></i>
+                            <a href="${image.photographer_profile}" target="_blank" class="hover:underline font-medium">${image.photographer_name}</a>
+                        </div>
+                    </div>
+                ` : ''}
+                <div class="p-2 bg-white">
+                    <p class="text-xs text-gray-600 truncate font-medium">${image.description}</p>
+                    <div class="flex items-center justify-between mt-1">
+                        <span class="text-xs text-blue-600 font-medium">Clicca per selezionare</span>
+                        ${image.source === 'unsplash' ? `
+                            <a href="https://unsplash.com" target="_blank" class="text-xs text-gray-400 hover:text-gray-600">
+                                <i class="fab fa-unsplash"></i>
+                            </a>
+                        ` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Add click event listener
+        const imgElement = imageItem.querySelector('.suggestion-image');
+        imgElement.addEventListener('click', function() {
+            console.log('🔥 Image clicked! Index:', index);
+            selectSuggestedImage(image);
+        });
+        
+        gridDiv.appendChild(imageItem);
+    });
+    
+    gridDiv.classList.remove('hidden');
+}
+
+async function selectSuggestedImage(imageData) {
+    console.log('🖼️ selectSuggestedImage called!');
+    console.log('Selecting image:', imageData);
+    
+    const loadingDiv = document.getElementById('suggestionsLoading');
+    const gridDiv = document.getElementById('suggestionsGrid');
+    
+    // Show loading
+    gridDiv.classList.add('hidden');
+    loadingDiv.classList.remove('hidden');
+    
+    try {
+        console.log('Sending request to:', `<?= BASE_URL ?>/api/images/select`);
+        
+        const response = await fetch(`<?= BASE_URL ?>/api/images/select`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({ imageData: imageData })
+        });
+        
+        console.log('Response status:', response.status);
+        const data = await response.json();
+        console.log('Response data:', data);
+        
+        if (data.success) {
+            // Update preview with selected image
+            const imagePreview = document.getElementById('imagePreview');
+            const previewImage = document.getElementById('previewImage');
+            const previewImageContainer = document.getElementById('previewImageContainer');
+            
+            const imageUrl = data.external_url || data.url;
+            
+            if (imagePreview) {
+                imagePreview.src = imageUrl;
+                imagePreview.classList.remove('hidden');
+            }
+            if (previewImage) {
+                previewImage.src = imageUrl;
+                previewImageContainer.classList.remove('hidden');
+            }
+            
+            // Store image data for form submission
+            document.getElementById('selectedSuggestionImage').value = JSON.stringify(data.image_data);
+            
+            // Show success message
+            showSuccessMessage('Immagine selezionata con successo!');
+            
+            // Hide suggestions and show success state with attribution
+            showImageSelectedState(data.image_data);
+        } else {
+            throw new Error(data.error || 'Errore durante la selezione dell\'immagine');
+        }
+    } catch (error) {
+        console.error('Error selecting image:', error);
+        alert('Errore durante la selezione dell\'immagine: ' + error.message);
+    } finally {
+        loadingDiv.classList.add('hidden');
+        gridDiv.classList.remove('hidden');
+    }
+}
+
+function showNoResultsMessage() {
+    const suggestionsDiv = document.getElementById('imageSuggestions');
+    suggestionsDiv.innerHTML = `
+        <i class="fas fa-search mb-2 text-2xl text-gray-400"></i>
+        <p>Nessuna immagine trovata per questo piatto. Prova con un nome diverso.</p>
+    `;
+    suggestionsDiv.classList.remove('hidden');
+}
+
+function showErrorMessage() {
+    const suggestionsDiv = document.getElementById('imageSuggestions');
+    suggestionsDiv.innerHTML = `
+        <i class="fas fa-exclamation-triangle mb-2 text-2xl text-red-400"></i>
+        <p class="text-red-600">Errore durante la ricerca delle immagini. Riprova più tardi.</p>
+    `;
+    suggestionsDiv.classList.remove('hidden');
+}
+
+function showImageSelectedState(imageData = null) {
+    const suggestionsDiv = document.getElementById('imageSuggestions');
+    
+    let attributionHtml = '';
+    if (imageData && imageData.source === 'unsplash') {
+        attributionHtml = `
+            <div class="mt-3 p-2 bg-blue-50 rounded-lg text-xs">
+                <p class="text-blue-800">
+                    Photo by <a href="${imageData.photographer_profile}" target="_blank" class="font-medium hover:underline">${imageData.photographer_name}</a> 
+                    on <a href="https://unsplash.com" target="_blank" class="font-medium hover:underline">Unsplash</a>
+                </p>
+            </div>
+        `;
+    }
+    
+    suggestionsDiv.innerHTML = `
+        <i class="fas fa-check-circle mb-2 text-2xl text-green-500"></i>
+        <p class="text-green-600">Immagine selezionata! Puoi cercare altre immagini o salvare il piatto.</p>
+        ${attributionHtml}
+    `;
+    suggestionsDiv.classList.remove('hidden');
+}
+
+function showSuccessMessage(message) {
+    // Create temporary success toast
+    const toast = document.createElement('div');
+    toast.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        document.body.removeChild(toast);
+    }, 3000);
 }
 
 function duplicateItem() {

@@ -1,5 +1,6 @@
 <?php
 require_once 'includes/BaseController.php';
+require_once 'includes/ImageSuggestionService.php';
 
 class ApiController extends BaseController {
     
@@ -128,6 +129,76 @@ class ApiController extends BaseController {
             
         } catch (Exception $e) {
             $this->jsonResponse(['error' => $e->getMessage()], 400);
+        }
+    }
+    
+    public function searchImages() {
+        if (!$this->auth->isRestaurantAdmin()) {
+            $this->jsonResponse(['error' => 'Unauthorized'], 401);
+        }
+        
+        $query = $_GET['q'] ?? '';
+        if (empty(trim($query))) {
+            $this->jsonResponse(['error' => 'Query required'], 400);
+        }
+        
+        try {
+            $imageService = new ImageSuggestionService();
+            $images = $imageService->searchImages($query, 4);
+            
+            $this->jsonResponse(['images' => $images]);
+        } catch (Exception $e) {
+            $this->jsonResponse(['error' => $e->getMessage()], 500);
+        }
+    }
+    
+    public function selectSuggestedImage() {
+        if (!$this->auth->isRestaurantAdmin()) {
+            $this->jsonResponse(['error' => 'Unauthorized'], 401);
+        }
+        
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->jsonResponse(['error' => 'Method not allowed'], 405);
+        }
+        
+        $input = json_decode(file_get_contents('php://input'), true);
+        $imageData = $input['imageData'] ?? [];
+        
+        if (empty($imageData['url'])) {
+            $this->jsonResponse(['error' => 'Image data required'], 400);
+        }
+        
+        try {
+            // Per Unsplash: trigger download endpoint per statistiche
+            if (isset($imageData['download_endpoint']) && isset($imageData['source']) && $imageData['source'] === 'unsplash') {
+                $this->triggerUnsplashDownload($imageData['download_endpoint']);
+            }
+            
+            // Non scarichiamo l'immagine, usiamo URL diretto (hotlinking)
+            $this->jsonResponse([
+                'success' => true,
+                'external_url' => $imageData['url'], // URL diretto Unsplash
+                'image_data' => $imageData, // Tutti i dati per attribuzione
+                'is_external' => true
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse(['error' => $e->getMessage()], 500);
+        }
+    }
+    
+    private function triggerUnsplashDownload($downloadEndpoint) {
+        // Trigger download endpoint per compliance Unsplash
+        if (defined('UNSPLASH_ACCESS_KEY') && UNSPLASH_ACCESS_KEY) {
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $downloadEndpoint);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                'Authorization: Client-ID ' . UNSPLASH_ACCESS_KEY
+            ]);
+            
+            curl_exec($ch);
+            curl_close($ch);
         }
     }
 }

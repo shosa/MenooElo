@@ -65,23 +65,7 @@ $content = ob_start();
                 </button>
             </form>
             
-            <!-- Demo Credentials -->
-            <div class="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
-                <p class="text-sm font-semibold text-blue-800 mb-2 flex items-center gap-1">
-                    <i class="fas fa-info-circle"></i>
-                    Credenziali Demo:
-                </p>
-                <div class="space-y-1 text-xs text-blue-700">
-                    <p><strong>Username:</strong> giovanni_rossi</p>
-                    <p><strong>Password:</strong> password</p>
-                </div>
-            </div>
-            
-            <div class="text-center mt-6">
-                <p class="text-sm text-gray-500">
-                    Problemi di accesso? Contatta il super admin.
-                </p>
-            </div>
+           
         </div>
         
         <!-- Footer Links -->

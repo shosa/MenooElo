@@ -297,8 +297,17 @@ class AdminController extends BaseController {
                     $data = $this->sanitizeInput($_POST);
                     
                     $imageUrl = null;
+                    
+                    // Handle regular file upload
                     if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
                         $imageUrl = $this->uploadImage($_FILES['image'], 'menu-items');
+                    }
+                    // Handle suggested image selection (external images)
+                    elseif (isset($data['selected_suggestion_image']) && !empty($data['selected_suggestion_image'])) {
+                        $imageData = json_decode($data['selected_suggestion_image'], true);
+                        if ($imageData && isset($imageData['url'])) {
+                            $imageUrl = $imageData['url']; // URL diretto (hotlinking)
+                        }
                     }
                     
                     $maxOrder = $this->db->selectOne(
@@ -519,10 +528,25 @@ class AdminController extends BaseController {
                     $data = $this->sanitizeInput($_POST);
                     
                     $imageUrl = $item['image_url'];
+                    
+                    // Handle regular file upload
                     if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
                         $imageUrl = $this->uploadImage($_FILES['image'], 'menu-items');
                         if ($item['image_url'] && file_exists(UPLOADS_PATH . $item['image_url'])) {
                             unlink(UPLOADS_PATH . $item['image_url']);
+                        }
+                    }
+                    // Handle suggested image selection (external images)
+                    elseif (isset($data['selected_suggestion_image']) && !empty($data['selected_suggestion_image'])) {
+                        $imageData = json_decode($data['selected_suggestion_image'], true);
+                        if ($imageData && isset($imageData['url'])) {
+                            // Remove old image if it's a local file
+                            if ($item['image_url'] && !filter_var($item['image_url'], FILTER_VALIDATE_URL)) {
+                                if (file_exists(UPLOADS_PATH . $item['image_url'])) {
+                                    unlink(UPLOADS_PATH . $item['image_url']);
+                                }
+                            }
+                            $imageUrl = $imageData['url']; // URL diretto (hotlinking)
                         }
                     }
                     
