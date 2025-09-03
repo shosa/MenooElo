@@ -183,7 +183,7 @@ $content = ob_start();
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
-                                    €<?= number_format($item['price'], 2) ?>
+                                    <?= $app_settings['currency_symbol'] ?><?= number_format($item['price'], 2) ?>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap hidden lg:table-cell">
                                     <?php if ($item['is_available']): ?>

@@ -8,6 +8,10 @@
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- HeadlessUI -->
+    <script src="https://unpkg.com/@headlessui/react@1.7.17/dist/headlessui.umd.production.min.js"></script>
+    <!-- Alpine.js for HeadlessUI-like functionality -->
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Custom CSS -->

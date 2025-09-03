@@ -1,17 +1,23 @@
 <?php
 require_once 'includes/Database.php';
 require_once 'includes/Auth.php';
+require_once 'includes/SystemSettings.php';
 
 class BaseController {
     protected $db;
     protected $auth;
+    protected $settings;
     
     public function __construct() {
         $this->db = Database::getInstance();
         $this->auth = new Auth();
+        $this->settings = SystemSettings::getInstance();
     }
     
     protected function loadView($view, $data = []) {
+        // Add global system settings to all views
+        $data['app_settings'] = SystemSettings::getAll();
+        
         extract($data);
         include "views/{$view}.php";
     }
@@ -52,15 +58,40 @@ class BaseController {
             mkdir($uploadDir, 0755, true);
         }
         
-        $allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
-        $maxSize = 5 * 1024 * 1024;
+        // Get settings from database
+        $maxSizeSetting = $this->db->selectOne("SELECT setting_value FROM system_settings WHERE setting_key = 'max_image_size'");
+        $allowedFormatsSetting = $this->db->selectOne("SELECT setting_value FROM system_settings WHERE setting_key = 'allowed_image_formats'");
+        
+        // Use database settings or fallback to defaults
+        $maxSize = $maxSizeSetting ? (int)$maxSizeSetting['setting_value'] : 5242880; // 5MB default
+        $allowedFormats = $allowedFormatsSetting ? explode(',', $allowedFormatsSetting['setting_value']) : ['jpg', 'jpeg', 'png', 'webp'];
+        
+        // Map file extensions to MIME types
+        $mimeTypeMap = [
+            'jpg' => ['image/jpeg'],
+            'jpeg' => ['image/jpeg'], 
+            'png' => ['image/png'],
+            'webp' => ['image/webp'],
+            'gif' => ['image/gif'],
+            'svg' => ['image/svg+xml'],
+            'bmp' => ['image/bmp']
+        ];
+        
+        $allowedTypes = [];
+        foreach ($allowedFormats as $format) {
+            if (isset($mimeTypeMap[strtolower(trim($format))])) {
+                $allowedTypes = array_merge($allowedTypes, $mimeTypeMap[strtolower(trim($format))]);
+            }
+        }
         
         if (!in_array($file['type'], $allowedTypes)) {
-            throw new Exception('Formato file non supportato');
+            $formatsStr = implode(', ', array_map('strtoupper', $allowedFormats));
+            throw new Exception("Formato file non supportato. Formati consentiti: {$formatsStr}");
         }
         
         if ($file['size'] > $maxSize) {
-            throw new Exception('File troppo grande (max 5MB)');
+            $maxSizeMB = round($maxSize / 1048576, 1);
+            throw new Exception("File troppo grande (max {$maxSizeMB}MB)");
         }
         
         $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
@@ -81,20 +112,28 @@ class BaseController {
             mkdir($uploadDir, 0755, true);
         }
         
-        $allowedTypes = ['application/font-woff', 'font/woff', 'application/font-woff2', 'font/woff2', 
-                        'application/x-font-ttf', 'font/ttf', 'application/x-font-otf', 'font/otf'];
-        $maxSize = 2 * 1024 * 1024; // 2MB
+        // Get settings from database
+        $maxFontSizeSetting = $this->db->selectOne("SELECT setting_value FROM system_settings WHERE setting_key = 'max_font_size'");
+        $allowedFontFormatsSetting = $this->db->selectOne("SELECT setting_value FROM system_settings WHERE setting_key = 'allowed_font_formats'");
+        
+        // Use database settings or fallback to defaults
+        $maxSize = $maxFontSizeSetting ? (int)$maxFontSizeSetting['setting_value'] : 2097152; // 2MB default
+        $allowedExtensions = $allowedFontFormatsSetting ? explode(',', $allowedFontFormatsSetting['setting_value']) : ['woff', 'woff2', 'ttf', 'otf'];
+        
+        // Normalize extensions
+        $allowedExtensions = array_map(function($ext) { return strtolower(trim($ext)); }, $allowedExtensions);
         
         // Get file extension for validation since MIME types can be inconsistent for fonts
         $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-        $allowedExtensions = ['woff', 'woff2', 'ttf', 'otf'];
         
         if (!in_array($extension, $allowedExtensions)) {
-            throw new Exception('Formato font non supportato. Usa WOFF, WOFF2, TTF o OTF.');
+            $formatsStr = implode(', ', array_map('strtoupper', $allowedExtensions));
+            throw new Exception("Formato font non supportato. Formati consentiti: {$formatsStr}");
         }
         
         if ($file['size'] > $maxSize) {
-            throw new Exception('Font troppo grande (max 2MB)');
+            $maxSizeMB = round($maxSize / 1048576, 1);
+            throw new Exception("Font troppo grande (max {$maxSizeMB}MB)");
         }
         
         $cleanName = preg_replace('/[^a-zA-Z0-9._-]/', '', pathinfo($file['name'], PATHINFO_FILENAME));

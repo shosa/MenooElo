@@ -134,7 +134,7 @@ $content = ob_start();
                     <div class="p-4">
                         <div class="flex items-start justify-between mb-2">
                             <h3 class="text-lg font-semibold text-gray-900 line-clamp-1"><?= htmlspecialchars($item['name']) ?></h3>
-                            <span class="text-xl font-bold text-blue-600 ml-2">€<?= number_format($item['price'], 2) ?></span>
+                            <span class="text-xl font-bold text-blue-600 ml-2"><?= $app_settings['currency_symbol'] ?><?= number_format($item['price'], 2) ?></span>
                         </div>
                         
                         <?php if ($item['description']): ?>

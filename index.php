@@ -1,6 +1,22 @@
 <?php
 require_once 'config/config.php';
 require_once 'includes/router.php';
+require_once 'includes/Database.php';
+
+// Check HTTPS setting
+try {
+    $db = Database::getInstance();
+    $httpsSettng = $db->selectOne("SELECT setting_value FROM system_settings WHERE setting_key = 'force_https'");
+    $forceHttps = ($httpsSettng && $httpsSettng['setting_value'] === '1');
+    
+    if ($forceHttps && !isset($_SERVER['HTTPS']) && $_SERVER['SERVER_PORT'] != 443) {
+        $redirectURL = 'https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
+        header("Location: $redirectURL");
+        exit();
+    }
+} catch (Exception $e) {
+    // If database is not available, continue without HTTPS check
+}
 
 session_start();
 
@@ -44,6 +60,11 @@ $router->addRoute('/superadmin/admin/delete/{id}', 'controllers/SuperAdminContro
 $router->addRoute('/superadmin/settings', 'controllers/SuperAdminController.php', 'systemSettings');
 $router->addRoute('/superadmin/database', 'controllers/SuperAdminController.php', 'database');
 $router->addRoute('/superadmin/database-api', 'controllers/SuperAdminController.php', 'databaseApi');
+$router->addRoute('/superadmin/file-manager', 'controllers/SuperAdminController.php', 'fileManager');
+$router->addRoute('/superadmin/file-manager-api', 'controllers/SuperAdminController.php', 'fileManagerApi');
+$router->addRoute('/superadmin/upload-stats', 'controllers/SuperAdminController.php', 'uploadStats');
+$router->addRoute('/superadmin/test-email', 'controllers/SuperAdminController.php', 'testEmail');
+$router->addRoute('/superadmin/manual-backup', 'controllers/SuperAdminController.php', 'manualBackup');
 $router->addRoute('/superadmin/logs', 'controllers/SuperAdminController.php', 'activityLogs');
 $router->addRoute('/superadmin/analytics', 'controllers/SuperAdminController.php', 'analytics');
 

@@ -341,7 +341,7 @@ $content = ob_start();
                                     <?= htmlspecialchars($item['name'] ?? 'Nome Piatto') ?>
                                 </h4>
                                 <span class="text-xl font-bold text-blue-600 ml-2" id="previewPrice">
-                                    €<?= isset($item['price']) ? number_format($item['price'], 2) : '0.00' ?>
+                                    <?= $app_settings['currency_symbol'] ?>?< isset($item['price']) ? number_format($item['price'], 2) : '0.00' ?>
                                 </span>
                             </div>
                             

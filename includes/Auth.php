@@ -129,8 +129,12 @@ class Auth {
     }
     
     private function checkSessionTimeout() {
+        // Get session timeout from database
+        $timeoutSetting = $this->db->selectOne("SELECT setting_value FROM system_settings WHERE setting_key = 'session_timeout'");
+        $sessionTimeout = $timeoutSetting ? (int)$timeoutSetting['setting_value'] : 3600; // 1 hour default
+        
         if (isset($_SESSION['last_activity']) && 
-            (time() - $_SESSION['last_activity']) > SESSION_TIMEOUT) {
+            (time() - $_SESSION['last_activity']) > $sessionTimeout) {
             session_destroy();
             return false;
         }
@@ -140,7 +144,43 @@ class Auth {
     }
     
     public function hashPassword($password) {
-        return password_hash($password, PASSWORD_BCRYPT, ['cost' => BCRYPT_COST]);
+        // Get password cost from database
+        $costSetting = $this->db->selectOne("SELECT setting_value FROM system_settings WHERE setting_key = 'password_cost'");
+        $cost = $costSetting ? (int)$costSetting['setting_value'] : 12; // default bcrypt cost
+        
+        return password_hash($password, PASSWORD_BCRYPT, ['cost' => $cost]);
+    }
+    
+    public function validatePassword($password) {
+        // Get password requirements from database
+        $minLengthSetting = $this->db->selectOne("SELECT setting_value FROM system_settings WHERE setting_key = 'min_password_length'");
+        $complexitySetting = $this->db->selectOne("SELECT setting_value FROM system_settings WHERE setting_key = 'require_password_complexity'");
+        
+        $minLength = $minLengthSetting ? (int)$minLengthSetting['setting_value'] : 8;
+        $requireComplexity = $complexitySetting ? ($complexitySetting['setting_value'] === '1') : false;
+        
+        $errors = [];
+        
+        if (strlen($password) < $minLength) {
+            $errors[] = "Password deve essere di almeno {$minLength} caratteri";
+        }
+        
+        if ($requireComplexity) {
+            if (!preg_match('/[A-Z]/', $password)) {
+                $errors[] = "Password deve contenere almeno una lettera maiuscola";
+            }
+            if (!preg_match('/[a-z]/', $password)) {
+                $errors[] = "Password deve contenere almeno una lettera minuscola";
+            }
+            if (!preg_match('/[0-9]/', $password)) {
+                $errors[] = "Password deve contenere almeno un numero";
+            }
+            if (!preg_match('/[^a-zA-Z0-9]/', $password)) {
+                $errors[] = "Password deve contenere almeno un simbolo";
+            }
+        }
+        
+        return empty($errors) ? true : $errors;
     }
     
     private function logActivity($userType, $userId, $restaurantId, $action, $description) {

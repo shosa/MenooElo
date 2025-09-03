@@ -73,7 +73,7 @@ class AdminController extends BaseController {
         $csrf_token = $this->generateCsrf();
         
         $this->loadView('admin/login', [
-            'title' => 'Login Admin - MenooElo',
+            'title' => 'Login Admin - ' . SystemSettings::getAppName(),
             'error' => $error ?? null,
             'csrf_token' => $csrf_token
         ]);
@@ -718,6 +718,12 @@ class AdminController extends BaseController {
                             $permissions = [];
                         }
                         
+                        // Validate password before hashing
+                        $passwordValidation = $this->auth->validatePassword($data['password']);
+                        if ($passwordValidation !== true) {
+                            throw new Exception('Password non valida: ' . implode(', ', $passwordValidation));
+                        }
+                        
                         $this->db->insert(
                             "INSERT INTO restaurant_admins (restaurant_id, username, email, password_hash, full_name, role, permissions, is_active) 
                              VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
@@ -762,6 +768,12 @@ class AdminController extends BaseController {
                         ];
                         
                         if (!empty($data['password'])) {
+                            // Validate password before hashing
+                            $passwordValidation = $this->auth->validatePassword($data['password']);
+                            if ($passwordValidation !== true) {
+                                throw new Exception('Password non valida: ' . implode(', ', $passwordValidation));
+                            }
+                            
                             $updateFields[] = 'password_hash = ?';
                             $updateParams[] = $this->auth->hashPassword($data['password']);
                         }

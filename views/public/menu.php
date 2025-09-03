@@ -144,6 +144,9 @@ img {
 
 <!-- Temporary Order JavaScript -->
 <script>
+// Global settings
+const currencySymbol = '<?= $app_settings['currency_symbol'] ?>';
+
 // Temporary Order Management
 class TemporaryOrder {
     constructor() {
@@ -251,7 +254,7 @@ class TemporaryOrder {
                         </div>
                         <div class="flex-1">
                             <h4 class="font-medium text-gray-800">${item.name}</h4>
-                            <p class="text-sm text-gray-600">€${item.price.toFixed(2)} cad.</p>
+                            <p class="text-sm text-gray-600">${currencySymbol}${item.price.toFixed(2)} cad.</p>
                         </div>
                     </div>
                     <div class="flex items-center gap-2">
@@ -267,7 +270,7 @@ class TemporaryOrder {
 
         const total = this.getTotal();
         if (totalElement) {
-            totalElement.textContent = `€${total.toFixed(2)}`;
+            totalElement.textContent = `${currencySymbol}${total.toFixed(2)}`;
         }
         
         this.updateSplitTotal();
@@ -281,7 +284,7 @@ class TemporaryOrder {
             const splitCount = parseInt(splitCountElement.value) || 1;
             const total = this.getTotal();
             const splitAmount = total / splitCount;
-            splitTotalElement.textContent = `€${splitAmount.toFixed(2)} a persona`;
+            splitTotalElement.textContent = `${currencySymbol}${splitAmount.toFixed(2)} a persona`;
         }
     }
 
@@ -599,9 +602,9 @@ document.addEventListener('DOMContentLoaded', function() {
                             <div class="flex-shrink-0 ml-4">
                                 <span class="text-2xl font-bold" style="color: <?= $restaurant['theme_color'] ?>;">
                                     <?php if (!empty($item['variants'])): ?>
-                                    da €<?= number_format(min(array_column($item['variants'], 'price_modifier')) + $item['price'], 2) ?>
+                                    da <?= $app_settings['currency_symbol'] ?><?= number_format(min(array_column($item['variants'], 'price_modifier')) + $item['price'], 2) ?>
                                     <?php else: ?>
-                                    €<?= number_format($item['price'], 2) ?>
+                                    <?= $app_settings['currency_symbol'] ?><?= number_format($item['price'], 2) ?>
                                     <?php endif; ?>
                                 </span>
                             </div>
@@ -631,7 +634,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <div class="flex justify-between items-center text-sm">
                                     <span class="text-gray-700"><?= htmlspecialchars($variant['name']) ?></span>
                                     <span class="font-semibold" style="color: <?= $restaurant['theme_color'] ?>;">
-                                        €<?= number_format($item['price'] + $variant['price_modifier'], 2) ?>
+                                        <?= $app_settings['currency_symbol'] ?>?< number_format($item['price'] + $variant['price_modifier'], 2) ?>
                                     </span>
                                 </div>
                                 <?php endforeach; ?>
@@ -647,7 +650,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <?php foreach ($item['extras'] as $extra): ?>
                                 <span class="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm">
                                     <span><?= htmlspecialchars($extra['name']) ?></span>
-                                    <span class="font-semibold">+€<?= number_format($extra['price'], 2) ?></span>
+                                    <span class="font-semibold">+<?= $app_settings['currency_symbol'] ?>?< number_format($extra['price'], 2) ?></span>
                                 </span>
                                 <?php endforeach; ?>
                             </div>
@@ -751,7 +754,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <!-- Total -->
             <div class="flex justify-between items-center mb-4 text-xl font-bold">
                 <span>Totale:</span>
-                <span id="order-total" style="color: var(--theme-color);">€0.00</span>
+                <span id="order-total" style="color: var(--theme-color);">${currencySymbol}0.00</span>
             </div>
             
             <!-- Split Bill Calculator -->
@@ -765,7 +768,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <input type="number" id="split-count" value="1" min="1" max="20" 
                            class="w-16 px-2 py-1 border border-gray-300 rounded-lg text-center">
                     <span class="text-sm">→</span>
-                    <div id="split-total" class="font-bold" style="color: var(--theme-color);">€0.00 a persona</div>
+                    <div id="split-total" class="font-bold" style="color: var(--theme-color);">${currencySymbol}0.00 a persona</div>
                 </div>
             </div>
             
@@ -925,9 +928,9 @@ function shareOrder() {
     
     let orderText = `🍽️ Il mio ordine da <?= addslashes($restaurant['name']) ?>:\n\n`;
     items.forEach(item => {
-        orderText += `• ${item.quantity}x ${item.name} - €${(item.price * item.quantity).toFixed(2)}\n`;
+        orderText += `• ${item.quantity}x ${item.name} - ${currencySymbol}${(item.price * item.quantity).toFixed(2)}\n`;
     });
-    orderText += `\n💰 Totale: €${tempOrder.getTotal().toFixed(2)}`;
+    orderText += `\n💰 Totale: ${currencySymbol}${tempOrder.getTotal().toFixed(2)}`;
     orderText += `\n📍 <?= addslashes($restaurant['address'] ?? '') ?>`;
     
     if (navigator.share) {
