@@ -127,6 +127,7 @@ img {
 }
 </style>
 
+<?php if ($restaurant['features']['local_cart_enabled'] ?? false): ?>
 <!-- Order Floating Button -->
 <button id="order-summary-btn" 
         class="fixed bottom-6 right-6 z-50 rounded-full p-4 hover:scale-110 transition-all duration-300 shadow-2xl animate-pulse-glow hidden border border-white"
@@ -323,6 +324,7 @@ document.addEventListener('DOMContentLoaded', function() {
     tempOrder = new TemporaryOrder();
 });
 </script>
+<?php endif; ?>
 
 <!-- Restaurant Header -->
 <section class="relative bg-gray-900 overflow-hidden min-h-screen flex items-center justify-center">
@@ -666,7 +668,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <?php endif; ?>
                         
                         <!-- Add to Order Button -->
-                        <?php if ($item['is_available']): ?>
+                        <?php if ($item['is_available'] && ($restaurant['features']['local_cart_enabled'] ?? false)): ?>
                         <div class="mt-6 pt-4 border-t border-gray-200">
                             <button onclick="tempOrder.addItem(<?= $item['id'] ?>, '<?= addslashes($item['name']) ?>', <?= $item['price'] ?>, '<?= $item['image_url'] ?>')"
                                     class="w-full px-6 py-3 text-white rounded-xl font-semibold hover:scale-105 transition-all duration-300 flex items-center justify-center gap-2 shadow-lg"
@@ -723,6 +725,7 @@ document.addEventListener('DOMContentLoaded', function() {
 </div>
 <?php endif; ?>
 
+<?php if ($restaurant['features']['local_cart_enabled'] ?? false): ?>
 <!-- Order Summary Modal -->
 <div id="orderModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
@@ -783,6 +786,7 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
     </div>
 </div>
+<?php endif; ?>
 
 <!-- Floating QR Button -->
 <?php if ($restaurant['features']['qrcode'] ?? false): ?>

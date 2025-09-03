@@ -50,13 +50,19 @@ class MenuController extends BaseController {
         $restaurant['features'] = json_decode($restaurant['features'] ?: '{}', true) ?? [];
         $restaurant['opening_hours'] = json_decode($restaurant['opening_hours'] ?: '{}', true) ?? [];
         
-        $this->loadView('public/menu', [
+        // Use the standard menu layout
+        $viewFile = 'public/menu';
+        
+        $this->loadView($viewFile, [
             'title' => $restaurant['name'] . ' - Menu Digitale',
             'description' => $restaurant['description'] ?? 'Menu digitale di ' . $restaurant['name'],
             'restaurant' => $restaurant,
             'categories' => $categories,
             'menuItems' => $menuItems,
-            'customTheme' => $restaurant['theme_color']
+            'customTheme' => $restaurant['theme_color'],
+            'primaryFont' => $restaurant['primary_font'] ?? 'Inter',
+            'customFontName' => $restaurant['custom_font_name'] ?? null,
+            'customFontPath' => $restaurant['custom_font_path'] ?? null
         ]);
     }
     

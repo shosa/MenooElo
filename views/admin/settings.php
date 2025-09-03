@@ -1,11 +1,17 @@
 <?php 
 $content = ob_start(); 
+
+// Parse features JSON safely
+$features = [];
+if (isset($restaurant['features']) && !empty($restaurant['features'])) {
+    $features = json_decode($restaurant['features'], true) ?? [];
+}
 ?>
 
 <div class="flex min-h-screen bg-gray-100">
     <?php include 'views/admin/_sidebar.php'; ?>
     
-    <div class="flex-1 lg:ml-0">
+    <div class="flex-1 lg:ml-64">
         <!-- Header -->
         <div class="bg-white px-6 py-4 border-b border-gray-200">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -162,7 +168,7 @@ $content = ob_start();
                                         
                                         <?php if (isset($restaurant['logo_url']) && $restaurant['logo_url']): ?>
                                         <div class="text-center">
-                                            <img src="<?= BASE_URL ?>/uploads/logos/<?= $restaurant['logo_url'] ?>" 
+                                            <img src="<?= BASE_URL ?>/uploads/<?= $restaurant['logo_url'] ?>" 
                                                  alt="Logo attuale" 
                                                  class="mx-auto rounded-lg shadow-sm max-w-24 max-h-24 object-contain mb-3" id="logoPreview">
                                             <p class="text-gray-600 text-sm mb-2">Click per cambiare</p>
@@ -192,7 +198,7 @@ $content = ob_start();
                                         
                                         <?php if (isset($restaurant['cover_image_url']) && $restaurant['cover_image_url']): ?>
                                         <div class="text-center">
-                                            <img src="<?= BASE_URL ?>/uploads/banners/<?= $restaurant['cover_image_url'] ?>" 
+                                            <img src="<?= BASE_URL ?>/uploads/<?= $restaurant['cover_image_url'] ?>" 
                                                  alt="Banner attuale" 
                                                  class="mx-auto rounded-lg shadow-sm max-w-full h-16 object-cover mb-3" id="bannerPreview">
                                             <p class="text-gray-600 text-sm mb-2">Click per cambiare</p>
@@ -213,21 +219,182 @@ $content = ob_start();
                                 </div>
                             </div>
                             
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">
-                                    Colore Primario
-                                </label>
-                                <div class="flex items-center gap-3">
-                                    <input type="color" 
-                                           name="primary_color" 
-                                           value="<?= $restaurant['theme_color'] ?? '#3b82f6' ?>"
-                                           class="w-16 h-10 border border-gray-300 rounded cursor-pointer">
-                                    <input type="text" 
-                                           name="primary_color_hex" 
-                                           value="<?= $restaurant['theme_color'] ?? '#3b82f6' ?>"
-                                           placeholder="#3b82f6"
-                                           class="px-3 py-2 border border-gray-300 rounded-lg text-sm w-24">
-                                    <span class="text-sm text-gray-500">Colore principale del menu</span>
+                            <!-- Advanced Theme Builder -->
+                            <div class="border border-gray-200 rounded-xl p-6 bg-gradient-to-br from-blue-50 to-indigo-50">
+                                <div class="flex items-center gap-3 mb-6">
+                                    <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-palette text-white"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-lg font-semibold text-gray-900">Theme Builder</h3>
+                                        <p class="text-sm text-gray-600">Personalizza l'aspetto del tuo menu</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                    <!-- Color Scheme -->
+                                    <div class="space-y-4">
+                                        <h4 class="font-semibold text-gray-800">Schema Colori</h4>
+                                        
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                                Colore Primario
+                                            </label>
+                                            <div class="flex items-center gap-3">
+                                                <input type="color" 
+                                                       id="primary-color-picker"
+                                                       name="primary_color" 
+                                                       value="<?= $restaurant['theme_color'] ?? '#3b82f6' ?>"
+                                                       class="w-16 h-10 border border-gray-300 rounded cursor-pointer"
+                                                       onchange="updateThemePreview()">
+                                                <input type="text" 
+                                                       id="primary-color-hex"
+                                                       name="primary_color_hex" 
+                                                       value="<?= $restaurant['theme_color'] ?? '#3b82f6' ?>"
+                                                       placeholder="#3b82f6"
+                                                       class="px-3 py-2 border border-gray-300 rounded-lg text-sm w-24"
+                                                       onchange="updateThemePreview()">
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Preset Colors -->
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">Preset Colori</label>
+                                            <div class="grid grid-cols-8 gap-2">
+                                                <?php 
+                                                $presetColors = [
+                                                    '#3b82f6' => 'Blu',
+                                                    '#ef4444' => 'Rosso',
+                                                    '#10b981' => 'Verde',
+                                                    '#f59e0b' => 'Arancione',
+                                                    '#8b5cf6' => 'Viola',
+                                                    '#ec4899' => 'Rosa',
+                                                    '#06b6d4' => 'Ciano',
+                                                    '#84cc16' => 'Lime'
+                                                ];
+                                                foreach ($presetColors as $color => $name): ?>
+                                                    <button type="button" 
+                                                            onclick="selectPresetColor('<?= $color ?>')"
+                                                            class="w-8 h-8 rounded-lg border-2 border-gray-300 hover:border-gray-400 transition-colors"
+                                                            style="background-color: <?= $color ?>"
+                                                            title="<?= $name ?>">
+                                                    </button>
+                                                <?php endforeach; ?>
+                                            </div>
+                                        </div>
+                                        
+                                        
+                                        
+                                        <!-- Typography -->
+                                        <div class="space-y-3">
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">Font Principale</label>
+                                            <select name="primary_font" id="font-selector" class="w-full px-3 py-2 border border-gray-300 rounded-lg" onchange="updateFontPreview()">
+                                                <option value="Inter" <?= ($restaurant['primary_font'] ?? 'Inter') === 'Inter' ? 'selected' : '' ?>>Inter (Default)</option>
+                                                <option value="Roboto" <?= ($restaurant['primary_font'] ?? '') === 'Roboto' ? 'selected' : '' ?>>Roboto</option>
+                                                <option value="Open Sans" <?= ($restaurant['primary_font'] ?? '') === 'Open Sans' ? 'selected' : '' ?>>Open Sans</option>
+                                                <option value="Poppins" <?= ($restaurant['primary_font'] ?? '') === 'Poppins' ? 'selected' : '' ?>>Poppins</option>
+                                                <option value="Montserrat" <?= ($restaurant['primary_font'] ?? '') === 'Montserrat' ? 'selected' : '' ?>>Montserrat</option>
+                                                <option value="Playfair Display" <?= ($restaurant['primary_font'] ?? '') === 'Playfair Display' ? 'selected' : '' ?>>Playfair Display</option>
+                                                <option value="Dancing Script" <?= ($restaurant['primary_font'] ?? '') === 'Dancing Script' ? 'selected' : '' ?>>Dancing Script</option>
+                                                <option value="custom" <?= ($restaurant['primary_font'] ?? '') === 'custom' ? 'selected' : '' ?>>Font Personalizzato</option>
+                                            </select>
+                                            
+                                            <!-- Custom Font Upload -->
+                                            <div id="custom-font-section" class="<?= ($restaurant['primary_font'] ?? '') === 'custom' ? '' : 'hidden' ?>">
+                                                <?php if (!empty($restaurant['custom_font_name'])): ?>
+                                                <div class="mb-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                                                    <div class="flex items-center justify-between">
+                                                        <div>
+                                                            <p class="text-sm font-medium text-green-800">Font Attuale: <?= htmlspecialchars($restaurant['custom_font_name']) ?></p>
+                                                            <p class="text-xs text-green-600"><?= htmlspecialchars($restaurant['custom_font_path']) ?></p>
+                                                        </div>
+                                                        <i class="fas fa-check-circle text-green-600"></i>
+                                                    </div>
+                                                </div>
+                                                <?php endif; ?>
+                                                
+                                                <div class="border border-dashed border-gray-300 rounded-lg p-4 text-center">
+                                                    <input type="file" id="custom-font-upload" name="custom_font" accept=".woff,.woff2,.ttf,.otf" class="hidden" onchange="handleFontUpload(this)">
+                                                    <div onclick="document.getElementById('custom-font-upload').click()" class="cursor-pointer">
+                                                        <i class="fas fa-upload text-2xl text-gray-400 mb-2"></i>
+                                                        <p class="text-sm text-gray-600"><?= !empty($restaurant['custom_font_name']) ? 'Sostituisci Font Personalizzato' : 'Carica Font Personalizzato' ?></p>
+                                                        <p class="text-xs text-gray-500 mt-1">WOFF, WOFF2, TTF, OTF (max 2MB)</p>
+                                                    </div>
+                                                    <div id="font-upload-status" class="mt-2 text-sm hidden"></div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Font Preview -->
+                                            <div class="border border-gray-200 rounded-lg p-3">
+                                                <p id="font-preview-text" class="text-lg" style="font-family: Inter;">
+                                                    Anteprima Font - Ristorante MenooElo
+                                                </p>
+                                                <p id="font-preview-small" class="text-sm text-gray-600 mt-1" style="font-family: Inter;">
+                                                    Spaghetti alla Carbonara €12.50
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Live Preview -->
+                                    <div class="space-y-4">
+                                        <h4 class="font-semibold text-gray-800">Anteprima Live</h4>
+                                        
+                                        <div id="theme-preview" class="border border-gray-300 rounded-xl p-4 bg-white">
+                                            <!-- Mock Menu Item Preview -->
+                                            <div class="space-y-4">
+                                                <div class="flex items-center gap-3 p-3 rounded-lg" style="background-color: rgba(59, 130, 246, 0.1);">
+                                                    <div class="w-3 h-3 rounded-full" id="preview-color-dot" style="background-color: #3b82f6;"></div>
+                                                    <h5 class="font-semibold" id="preview-restaurant-name"><?= htmlspecialchars($restaurant['name'] ?? 'Nome Ristorante') ?></h5>
+                                                </div>
+                                                
+                                                <div class="border border-gray-200 rounded-lg p-3">
+                                                    <h6 class="font-medium text-gray-800 mb-2">Pasta</h6>
+                                                    <div class="flex justify-between items-center">
+                                                        <div>
+                                                            <p class="font-medium">Spaghetti Carbonara</p>
+                                                            <p class="text-sm text-gray-600">Pancetta, uova, pecorino romano</p>
+                                                        </div>
+                                                        <span class="font-bold" id="preview-price" style="color: #3b82f6;">€12.50</span>
+                                                    </div>
+                                                </div>
+                                                
+                                                <button type="button" 
+                                                        id="preview-button"
+                                                        class="w-full py-2 px-4 rounded-lg text-white font-medium transition-colors"
+                                                        style="background-color: #3b82f6;">
+                                                    Aggiungi al Carrello
+                                                </button>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Theme Templates -->
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">Template Predefiniti</label>
+                                            <div class="grid grid-cols-2 gap-2">
+                                                <button type="button" onclick="applyThemeTemplate('elegant')" 
+                                                        class="p-2 border border-gray-200 rounded-lg hover:border-gray-300 text-left">
+                                                    <div class="text-sm font-medium">Elegante</div>
+                                                    <div class="text-xs text-gray-500">Blu navy e oro</div>
+                                                </button>
+                                                <button type="button" onclick="applyThemeTemplate('warm')" 
+                                                        class="p-2 border border-gray-200 rounded-lg hover:border-gray-300 text-left">
+                                                    <div class="text-sm font-medium">Caldo</div>
+                                                    <div class="text-xs text-gray-500">Arancione e rosso</div>
+                                                </button>
+                                                <button type="button" onclick="applyThemeTemplate('nature')" 
+                                                        class="p-2 border border-gray-200 rounded-lg hover:border-gray-300 text-left">
+                                                    <div class="text-sm font-medium">Natura</div>
+                                                    <div class="text-xs text-gray-500">Verde e marrone</div>
+                                                </button>
+                                                <button type="button" onclick="applyThemeTemplate('modern')" 
+                                                        class="p-2 border border-gray-200 rounded-lg hover:border-gray-300 text-left">
+                                                    <div class="text-sm font-medium">Moderno</div>
+                                                    <div class="text-xs text-gray-500">Grigio e viola</div>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             
@@ -326,7 +493,7 @@ $content = ob_start();
                                 <label class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
                                     <input type="checkbox" 
                                            name="show_prices" 
-                                           checked
+                                           <?= ($features['show_prices'] ?? true) ? 'checked' : '' ?>
                                            class="rounded border-gray-300 text-blue-600 focus:ring-blue-600">
                                     <div>
                                         <div class="font-medium text-gray-800">Mostra Prezzi</div>
@@ -336,8 +503,30 @@ $content = ob_start();
                                 
                                 <label class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
                                     <input type="checkbox" 
+                                           name="local_cart_enabled" 
+                                           <?= ($features['local_cart_enabled'] ?? false) ? 'checked' : '' ?>
+                                           class="rounded border-gray-300 text-blue-600 focus:ring-blue-600">
+                                    <div>
+                                        <div class="font-medium text-gray-800">Attiva Carrello Locale</div>
+                                        <div class="text-sm text-gray-600">I clienti potranno aggiungere piatti al carrello temporaneo</div>
+                                    </div>
+                                </label>
+                                
+                                <label class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
+                                    <input type="checkbox" 
+                                           name="qrcode" 
+                                           <?= ($features['qrcode'] ?? false) ? 'checked' : '' ?>
+                                           class="rounded border-gray-300 text-blue-600 focus:ring-blue-600">
+                                    <div>
+                                        <div class="font-medium text-gray-800">Abilita QR Code Menu</div>
+                                        <div class="text-sm text-gray-600">Mostra bottone QR per condividere il menu</div>
+                                    </div>
+                                </label>
+                                
+                                <label class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
+                                    <input type="checkbox" 
                                            name="show_descriptions" 
-                                           checked
+                                           <?= ($features['show_descriptions'] ?? true) ? 'checked' : '' ?>
                                            class="rounded border-gray-300 text-blue-600 focus:ring-blue-600">
                                     <div>
                                         <div class="font-medium text-gray-800">Mostra Descrizioni</div>
@@ -348,7 +537,7 @@ $content = ob_start();
                                 <label class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
                                     <input type="checkbox" 
                                            name="show_images" 
-                                           checked
+                                           <?= ($features['show_images'] ?? true) ? 'checked' : '' ?>
                                            class="rounded border-gray-300 text-blue-600 focus:ring-blue-600">
                                     <div>
                                         <div class="font-medium text-gray-800">Mostra Immagini</div>
@@ -468,6 +657,205 @@ function removeBanner() {
         form.submit();
     }
 }
+
+// Theme Builder Functions
+function updateThemePreview() {
+    const colorPicker = document.getElementById('primary-color-picker');
+    const colorHex = document.getElementById('primary-color-hex');
+    const color = colorPicker.value;
+    
+    // Sync inputs
+    colorHex.value = color;
+    
+    // Update preview elements
+    const previewDot = document.getElementById('preview-color-dot');
+    const previewPrice = document.getElementById('preview-price');
+    const previewButton = document.getElementById('preview-button');
+    const themePreview = document.getElementById('theme-preview');
+    
+    if (previewDot) previewDot.style.backgroundColor = color;
+    if (previewPrice) previewPrice.style.color = color;
+    if (previewButton) previewButton.style.backgroundColor = color;
+    
+    // Update header background
+    const headerBg = themePreview.querySelector('.p-3');
+    if (headerBg) {
+        headerBg.style.backgroundColor = `${color}20`; // 20 = 12.5% opacity in hex
+    }
+}
+
+function selectPresetColor(color) {
+    const colorPicker = document.getElementById('primary-color-picker');
+    const colorHex = document.getElementById('primary-color-hex');
+    
+    colorPicker.value = color;
+    colorHex.value = color;
+    updateThemePreview();
+}
+
+function applyThemeTemplate(template) {
+    const templates = {
+        elegant: {
+            color: '#1e3a8a',
+            name: 'Elegante'
+        },
+        warm: {
+            color: '#ea580c',
+            name: 'Caldo'
+        },
+        nature: {
+            color: '#059669',
+            name: 'Natura'
+        },
+        modern: {
+            color: '#7c3aed',
+            name: 'Moderno'
+        }
+    };
+    
+    const themeData = templates[template];
+    if (themeData) {
+        selectPresetColor(themeData.color);
+        
+        // Show confirmation
+        const toast = document.createElement('div');
+        toast.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+        toast.textContent = `Template "${themeData.name}" applicato!`;
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            document.body.removeChild(toast);
+        }, 3000);
+    }
+}
+
+// Font Management Functions
+function updateFontPreview() {
+    const fontSelector = document.getElementById('font-selector');
+    const customFontSection = document.getElementById('custom-font-section');
+    const previewText = document.getElementById('font-preview-text');
+    const previewSmall = document.getElementById('font-preview-small');
+    
+    const selectedFont = fontSelector.value;
+    
+    if (selectedFont === 'custom') {
+        customFontSection.classList.remove('hidden');
+    } else {
+        customFontSection.classList.add('hidden');
+        
+        // Update preview with Google Fonts
+        if (selectedFont !== 'Inter') {
+            loadGoogleFont(selectedFont);
+        }
+        
+        previewText.style.fontFamily = selectedFont;
+        previewSmall.style.fontFamily = selectedFont;
+    }
+}
+
+function loadGoogleFont(fontName) {
+    const link = document.createElement('link');
+    link.href = `https://fonts.googleapis.com/css2?family=${fontName.replace(' ', '+')}:wght@400;500;600;700&display=swap`;
+    link.rel = 'stylesheet';
+    
+    // Remove previous Google Font links
+    document.querySelectorAll('link[href*="googleapis.com/css"]').forEach(link => {
+        if (link.href.includes(fontName.replace(' ', '+'))) return;
+        link.remove();
+    });
+    
+    document.head.appendChild(link);
+}
+
+function handleFontUpload(input) {
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+        const statusDiv = document.getElementById('font-upload-status');
+        
+        // Validate file size (max 2MB)
+        if (file.size > 2 * 1024 * 1024) {
+            statusDiv.className = 'mt-2 text-sm text-red-600';
+            statusDiv.textContent = 'File troppo grande. Max 2MB.';
+            statusDiv.classList.remove('hidden');
+            return;
+        }
+        
+        // Validate file type
+        const validTypes = ['.woff', '.woff2', '.ttf', '.otf'];
+        const fileExt = '.' + file.name.split('.').pop().toLowerCase();
+        if (!validTypes.includes(fileExt)) {
+            statusDiv.className = 'mt-2 text-sm text-red-600';
+            statusDiv.textContent = 'Formato non supportato. Usa WOFF, WOFF2, TTF o OTF.';
+            statusDiv.classList.remove('hidden');
+            return;
+        }
+        
+        // Show success and preview
+        statusDiv.className = 'mt-2 text-sm text-green-600';
+        statusDiv.textContent = `Font "${file.name}" caricato con successo!`;
+        statusDiv.classList.remove('hidden');
+        
+        // Create font face for preview
+        const fontName = 'CustomFont_' + Date.now();
+        const fontUrl = URL.createObjectURL(file);
+        
+        const style = document.createElement('style');
+        style.textContent = `
+            @font-face {
+                font-family: '${fontName}';
+                src: url('${fontUrl}') format('${getFontFormat(fileExt)}');
+            }
+        `;
+        document.head.appendChild(style);
+        
+        // Update preview
+        const previewText = document.getElementById('font-preview-text');
+        const previewSmall = document.getElementById('font-preview-small');
+        previewText.style.fontFamily = fontName;
+        previewSmall.style.fontFamily = fontName;
+        
+        setTimeout(() => {
+            statusDiv.classList.add('hidden');
+        }, 5000);
+    }
+}
+
+function getFontFormat(extension) {
+    const formats = {
+        '.woff': 'woff',
+        '.woff2': 'woff2',
+        '.ttf': 'truetype',
+        '.otf': 'opentype'
+    };
+    return formats[extension] || 'truetype';
+}
+
+
+// Initialize theme preview on page load
+document.addEventListener('DOMContentLoaded', function() {
+    updateThemePreview();
+    updateFontPreview();
+    
+    // Add event listeners for better UX
+    const colorPicker = document.getElementById('primary-color-picker');
+    const colorHex = document.getElementById('primary-color-hex');
+    
+    if (colorPicker) {
+        colorPicker.addEventListener('input', updateThemePreview);
+    }
+    
+    if (colorHex) {
+        colorHex.addEventListener('input', function() {
+            if (this.value.match(/^#[0-9A-Fa-f]{6}$/)) {
+                const colorPicker = document.getElementById('primary-color-picker');
+                if (colorPicker) {
+                    colorPicker.value = this.value;
+                    updateThemePreview();
+                }
+            }
+        });
+    }
+});
 </script>
 
 <?php 

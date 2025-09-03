@@ -7,7 +7,7 @@
 <div id="mobile-sidebar-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden hidden" onclick="closeMobileSidebar()"></div>
 
 <!-- Sidebar -->
-<aside id="admin-sidebar" class="w-64 bg-red-800 shadow-xl flex-shrink-0 fixed left-0 top-0 h-screen transform transition-transform duration-300 z-50 lg:transform-none lg:relative lg:z-auto -translate-x-full lg:translate-x-0 flex flex-col">
+<aside id="admin-sidebar" class="w-64 bg-red-800 shadow-xl flex-shrink-0 fixed left-0 top-0 h-screen transform transition-transform duration-300 z-50 lg:transform-none lg:fixed lg:z-40 -translate-x-full lg:translate-x-0 flex flex-col lg:overflow-y-auto">
     <!-- Brand -->
     <div class="p-6 border-b border-red-700">
         <div class="text-center">

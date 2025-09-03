@@ -13,6 +13,30 @@
     <!-- Custom CSS -->
     <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/custom.css">
     
+    <?php 
+    // Calculate font settings first
+    $fontFamily = 'Inter';
+    $fontImports = '';
+    
+    if (isset($customFontName) && isset($customFontPath) && $customFontName && $customFontPath): 
+        // Custom font uploaded
+        $fontFamily = $customFontName;
+        $fontImports = "@font-face {
+            font-family: '{$customFontName}';
+            src: url('" . BASE_URL . "/uploads/{$customFontPath}') format('woff2'),
+                 url('" . BASE_URL . "/uploads/{$customFontPath}') format('woff'),
+                 url('" . BASE_URL . "/uploads/{$customFontPath}') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }";
+    elseif (isset($primaryFont) && $primaryFont && $primaryFont !== 'Inter'): 
+        // Google Font selected
+        $fontFamily = $primaryFont;
+        $fontImports = "@import url('https://fonts.googleapis.com/css2?family=" . urlencode($primaryFont) . ":wght@300;400;500;600;700&display=swap');";
+    endif;
+    ?>
+    
     <script>
         tailwind.config = {
             theme: {
@@ -27,7 +51,7 @@
                         'base-300': '#e5e7eb',
                     },
                     fontFamily: {
-                        'sans': ['Inter', 'system-ui', 'sans-serif'],
+                        'sans': ['<?= $fontFamily ?? 'Inter' ?>', 'system-ui', 'sans-serif'],
                     }
                 }
             }
@@ -38,6 +62,22 @@
     <style>
         :root {
             --primary-color: <?= $customTheme ?>;
+        }
+    </style>
+    <?php endif; ?>
+    
+    
+    <?php if ($fontImports): ?>
+    <style>
+        <?= $fontImports ?>
+        
+        body, h1, h2, h3, h4, h5, h6, p, span, div, button, input, textarea, select, label, a:not(.fa):not([class*="fa-"]) {
+            font-family: '<?= $fontFamily ?>', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+        }
+        
+        /* Preserve Font Awesome icons */
+        .fa, .fas, .far, .fal, .fab, [class*="fa-"] {
+            font-family: "Font Awesome 6 Free", "Font Awesome 6 Brands" !important;
         }
     </style>
     <?php endif; ?>

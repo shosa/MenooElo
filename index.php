@@ -43,6 +43,7 @@ $router->addRoute('/superadmin/admin/edit/{id}', 'controllers/SuperAdminControll
 $router->addRoute('/superadmin/admin/delete/{id}', 'controllers/SuperAdminController.php', 'adminDelete');
 $router->addRoute('/superadmin/settings', 'controllers/SuperAdminController.php', 'systemSettings');
 $router->addRoute('/superadmin/database', 'controllers/SuperAdminController.php', 'database');
+$router->addRoute('/superadmin/database-api', 'controllers/SuperAdminController.php', 'databaseApi');
 $router->addRoute('/superadmin/logs', 'controllers/SuperAdminController.php', 'activityLogs');
 $router->addRoute('/superadmin/analytics', 'controllers/SuperAdminController.php', 'analytics');
 
@@ -50,8 +51,6 @@ $router->addRoute('/superadmin/analytics', 'controllers/SuperAdminController.php
 $router->addRoute('/api/admin/quick-edit', 'controllers/ApiController.php', 'quickEdit');
 $router->addRoute('/api/admin/update-order', 'controllers/ApiController.php', 'updateOrder');
 $router->addRoute('/api/upload', 'controllers/ApiController.php', 'upload');
-$router->addRoute('/api/images/search', 'controllers/ApiController.php', 'searchImages');
-$router->addRoute('/api/images/select', 'controllers/ApiController.php', 'selectSuggestedImage');
 
 $requestUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $requestUri = str_replace('/menooelo', '', $requestUri);

@@ -992,36 +992,58 @@ class AdminController extends BaseController {
                         
                     } elseif ($section === 'branding') {
                         // Handle branding updates (logo, banner, colors)
-                        $restaurant = $this->db->selectOne("SELECT logo_url, cover_image_url FROM restaurants WHERE id = ?", [$restaurantId]);
+                        $restaurant = $this->db->selectOne("SELECT * FROM restaurants WHERE id = ?", [$restaurantId]);
                         
                         $logoUrl = $restaurant['logo_url'];
                         $coverUrl = $restaurant['cover_image_url'];
                         
                         // Handle logo upload
                         if (isset($_FILES['logo']) && $_FILES['logo']['error'] === UPLOAD_ERR_OK) {
-                            $newLogoUrl = $this->uploadImage($_FILES['logo'], 'logos');
                             // Delete old logo if exists
-                            if ($logoUrl && file_exists(UPLOADS_PATH . '/logos/' . $logoUrl)) {
-                                unlink(UPLOADS_PATH . '/logos/' . $logoUrl);
+                            if ($logoUrl && file_exists(UPLOADS_PATH . $logoUrl)) {
+                                unlink(UPLOADS_PATH . $logoUrl);
                             }
-                            $logoUrl = $newLogoUrl;
+                            $logoUrl = $this->uploadImage($_FILES['logo'], 'logos');
                         }
                         
                         // Handle banner upload
                         if (isset($_FILES['banner']) && $_FILES['banner']['error'] === UPLOAD_ERR_OK) {
-                            $newCoverUrl = $this->uploadImage($_FILES['banner'], 'banners');
                             // Delete old banner if exists
-                            if ($coverUrl && file_exists(UPLOADS_PATH . '/banners/' . $coverUrl)) {
-                                unlink(UPLOADS_PATH . '/banners/' . $coverUrl);
+                            if ($coverUrl && file_exists(UPLOADS_PATH . $coverUrl)) {
+                                unlink(UPLOADS_PATH . $coverUrl);
                             }
-                            $coverUrl = $newCoverUrl;
+                            $coverUrl = $this->uploadImage($_FILES['banner'], 'banners');
                         }
                         
+                        // Handle font upload
+                        $customFontPath = null;
+                        $customFontName = null;
+                        if (isset($_FILES['custom_font']) && $_FILES['custom_font']['error'] === UPLOAD_ERR_OK) {
+                            $fontResult = $this->uploadFont($_FILES['custom_font']);
+                            if ($fontResult) {
+                                $customFontPath = $fontResult['path'];
+                                $customFontName = $fontResult['name'];
+                            }
+                        }
+                        
+                        // Prepare font settings
+                        $primaryFont = $data['primary_font'] ?? 'Inter';
+                        $finalCustomFontPath = $customFontPath ?? ($restaurant['custom_font_path'] ?? null);
+                        $finalCustomFontName = $customFontName ?? ($restaurant['custom_font_name'] ?? null);
+                        
+                        // Prepare features settings (keep existing features)
+                        $existingFeatures = json_decode($restaurant['features'] ?: '{}', true) ?? [];
+                        $featuresJson = json_encode($existingFeatures);
+                        
                         $this->db->update(
-                            "UPDATE restaurants SET logo_url = ?, cover_image_url = ?, theme_color = ? WHERE id = ?",
+                            "UPDATE restaurants SET logo_url = ?, cover_image_url = ?, theme_color = ?, primary_font = ?, custom_font_path = ?, custom_font_name = ?, features = ? WHERE id = ?",
                             [
                                 $logoUrl, $coverUrl, 
-                                $data['primary_color'] ?? $data['primary_color_hex'] ?? '#3b82f6', 
+                                $data['primary_color'] ?? $data['primary_color_hex'] ?? '#3b82f6',
+                                $primaryFont,
+                                $finalCustomFontPath,
+                                $finalCustomFontName,
+                                $featuresJson,
                                 $restaurantId
                             ]
                         );
@@ -1051,7 +1073,9 @@ class AdminController extends BaseController {
                         $features = [
                             'show_prices' => isset($data['show_prices']),
                             'show_descriptions' => isset($data['show_descriptions']),
-                            'show_images' => isset($data['show_images'])
+                            'show_images' => isset($data['show_images']),
+                            'local_cart_enabled' => isset($data['local_cart_enabled']),
+                            'qrcode' => isset($data['qrcode'])
                         ];
                         
                         $this->db->update(
@@ -1065,8 +1089,8 @@ class AdminController extends BaseController {
                         $restaurant = $this->db->selectOne("SELECT logo_url FROM restaurants WHERE id = ?", [$restaurantId]);
                         if ($restaurant['logo_url']) {
                             // Delete physical file
-                            if (file_exists(UPLOADS_PATH . '/logos/' . $restaurant['logo_url'])) {
-                                unlink(UPLOADS_PATH . '/logos/' . $restaurant['logo_url']);
+                            if (file_exists(UPLOADS_PATH . $restaurant['logo_url'])) {
+                                unlink(UPLOADS_PATH . $restaurant['logo_url']);
                             }
                             // Update database
                             $this->db->update(
@@ -1081,8 +1105,8 @@ class AdminController extends BaseController {
                         $restaurant = $this->db->selectOne("SELECT cover_image_url FROM restaurants WHERE id = ?", [$restaurantId]);
                         if ($restaurant['cover_image_url']) {
                             // Delete physical file
-                            if (file_exists(UPLOADS_PATH . '/banners/' . $restaurant['cover_image_url'])) {
-                                unlink(UPLOADS_PATH . '/banners/' . $restaurant['cover_image_url']);
+                            if (file_exists(UPLOADS_PATH . $restaurant['cover_image_url'])) {
+                                unlink(UPLOADS_PATH . $restaurant['cover_image_url']);
                             }
                             // Update database
                             $this->db->update(

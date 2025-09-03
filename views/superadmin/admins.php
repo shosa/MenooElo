@@ -5,7 +5,7 @@ $content = ob_start();
 <div class="flex min-h-screen bg-gray-100">
     <?php include 'views/superadmin/_sidebar.php'; ?>
     
-    <div class="flex-1 lg:ml-0">
+    <div class="flex-1 lg:ml-64">
         <!-- Header -->
         <div class="bg-white px-6 py-4 border-b border-gray-200">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">

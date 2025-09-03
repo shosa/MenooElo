@@ -775,5 +775,555 @@ class SuperAdminController extends BaseController {
             $this->redirect('/superadmin/admins?error=delete_failed');
         }
     }
+    
+    public function databaseApi() {
+        $this->auth->requireSuperAdmin();
+        
+        header('Content-Type: application/json');
+        
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['success' => false, 'error' => 'Metodo non consentito']);
+            return;
+        }
+        
+        try {
+            $rawInput = file_get_contents('php://input');
+            $input = json_decode($rawInput, true);
+            
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                echo json_encode(['success' => false, 'error' => 'JSON non valido: ' . json_last_error_msg()]);
+                return;
+            }
+            
+            $action = $input['action'] ?? '';
+            $csrfToken = $input['csrf_token'] ?? '';
+            
+            if (!$this->validateCsrf($csrfToken)) {
+                echo json_encode(['success' => false, 'error' => 'Token CSRF non valido']);
+                return;
+            }
+        
+            switch ($action) {
+                case 'get_stats':
+                    error_log("Getting database stats...");
+                    $stats = $this->getDatabaseStats();
+                    error_log("Stats retrieved: " . print_r($stats, true));
+                    echo json_encode([
+                        'success' => true,
+                        'stats' => $stats
+                    ]);
+                    break;
+                    
+                case 'get_tables':
+                    error_log("Getting tables list...");
+                    $tables = $this->getTablesList();
+                    error_log("Tables: " . print_r($tables, true));
+                    echo json_encode([
+                        'success' => true,
+                        'tables' => $tables
+                    ]);
+                    break;
+                    
+                case 'get_table_details':
+                    $tableName = $input['table'] ?? '';
+                    error_log("Request for table details: '$tableName'");
+                    if (empty($tableName)) {
+                        throw new Exception('Nome tabella mancante');
+                    }
+                    $details = $this->getTableDetails($tableName);
+                    error_log("Table details retrieved successfully");
+                    echo json_encode([
+                        'success' => true,
+                        'details' => $details
+                    ]);
+                    break;
+                    
+                case 'execute_query':
+                    $query = trim($input['query'] ?? '');
+                    if (empty($query)) {
+                        throw new Exception('Query mancante');
+                    }
+                    echo json_encode($this->executeQuery($query));
+                    break;
+                    
+                case 'optimize_table':
+                    $tableName = $input['table'] ?? '';
+                    if (empty($tableName)) {
+                        throw new Exception('Nome tabella mancante');
+                    }
+                    $this->db->query("OPTIMIZE TABLE `$tableName`");
+                    echo json_encode(['success' => true, 'message' => "Tabella $tableName ottimizzata"]);
+                    break;
+                    
+                case 'repair_table':
+                    $tableName = $input['table'] ?? '';
+                    if (empty($tableName)) {
+                        throw new Exception('Nome tabella mancante');
+                    }
+                    $this->db->query("REPAIR TABLE `$tableName`");
+                    echo json_encode(['success' => true, 'message' => "Tabella $tableName riparata"]);
+                    break;
+                    
+                case 'truncate_table':
+                    $tableName = $input['table'] ?? '';
+                    if (empty($tableName) || !$this->isValidTableName($tableName)) {
+                        throw new Exception('Nome tabella non valido');
+                    }
+                    $this->db->query("TRUNCATE TABLE `$tableName`");
+                    echo json_encode(['success' => true, 'message' => "Tabella $tableName svuotata"]);
+                    break;
+                    
+                case 'drop_table':
+                    $tableName = $input['table'] ?? '';
+                    if (empty($tableName) || !$this->isValidTableName($tableName)) {
+                        throw new Exception('Nome tabella non valido');
+                    }
+                    // Protezione per tabelle critiche
+                    $criticalTables = ['restaurants', 'restaurant_admins', 'super_admins', 'menu_categories', 'menu_items'];
+                    if (in_array($tableName, $criticalTables)) {
+                        throw new Exception('Non è possibile eliminare tabelle critiche del sistema');
+                    }
+                    $this->db->query("DROP TABLE `$tableName`");
+                    echo json_encode(['success' => true, 'message' => "Tabella $tableName eliminata"]);
+                    break;
+                    
+                case 'export_database':
+                    $exportType = $input['export_type'] ?? 'full';
+                    $format = $input['format'] ?? 'sql';
+                    $tables = $input['tables'] ?? [];
+                    echo json_encode($this->exportDatabase($exportType, $format, $tables));
+                    break;
+                    
+                case 'backup_database':
+                    $backupType = $input['backup_type'] ?? 'full';
+                    echo json_encode($this->backupDatabase($backupType));
+                    break;
+                    
+                default:
+                    throw new Exception('Azione non riconosciuta');
+            }
+            
+        } catch (Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+    
+    private function getDatabaseStats() {
+        error_log("Starting getDatabaseStats()...");
+        
+        try {
+            // Test basic connection first
+            $testResult = $this->db->selectOne("SELECT 1 as test");
+            error_log("Basic connection test: " . print_r($testResult, true));
+            
+            // Get current database name
+            $dbResult = $this->db->selectOne("SELECT DATABASE() as name");
+            $dbName = $dbResult ? $dbResult['name'] : null;
+            error_log("Database name: " . ($dbName ?? 'NULL'));
+            
+            if (!$dbName) {
+                throw new Exception("No database selected");
+            }
+            
+            // Get MySQL version
+            $versionResult = $this->db->selectOne("SELECT VERSION() as version");
+            $mysqlVersion = $versionResult ? $versionResult['version'] : 'N/A';
+            error_log("MySQL version: " . $mysqlVersion);
+            
+            // Count tables using SHOW TABLES
+            $allTables = $this->db->select("SHOW TABLES");
+            $tableCount = count($allTables);
+            error_log("Found $tableCount tables: " . print_r($allTables, true));
+            
+            // Simple table info - get only first few tables for overview
+            $formattedTables = [];
+            $tablesProcessed = 0;
+            
+            foreach ($allTables as $tableRow) {
+                if ($tablesProcessed >= 5) break; // Limit to 5 for debugging
+                
+                $tableName = array_values($tableRow)[0];
+                error_log("Processing table: $tableName");
+                
+                try {
+                    // Get row count
+                    $rowCountResult = $this->db->selectOne("SELECT COUNT(*) as count FROM `$tableName`");
+                    $rowCount = $rowCountResult ? (int)$rowCountResult['count'] : 0;
+                    error_log("Table $tableName has $rowCount rows");
+                    
+                    $formattedTables[] = [
+                        'name' => $tableName,
+                        'rows' => $rowCount,
+                        'size' => '0.001 MB',
+                        'engine' => 'InnoDB'
+                    ];
+                    $tablesProcessed++;
+                } catch (Exception $e) {
+                    error_log("Error processing table $tableName: " . $e->getMessage());
+                }
+            }
+            
+            $result = [
+                'table_count' => $tableCount,
+                'db_size' => '1.0 MB', // Simplified for now
+                'mysql_version' => $mysqlVersion,
+                'collation' => 'utf8mb4_unicode_ci',
+                'charset' => 'utf8mb4',
+                'tables' => $formattedTables
+            ];
+            
+            error_log("Final result: " . print_r($result, true));
+            return $result;
+            
+        } catch (Exception $e) {
+            error_log("Database stats error: " . $e->getMessage());
+            error_log("Stack trace: " . $e->getTraceAsString());
+            
+            return [
+                'table_count' => 0,
+                'db_size' => '0 MB',
+                'mysql_version' => 'N/A',
+                'collation' => 'N/A',
+                'charset' => 'N/A',
+                'tables' => [],
+                'error' => $e->getMessage()
+            ];
+        }
+    }
+    
+    private function getTablesList() {
+        error_log("Starting getTablesList()...");
+        
+        try {
+            // Get all tables using SHOW TABLES (simpler and more reliable)
+            $allTables = $this->db->select("SHOW TABLES");
+            error_log("Found tables: " . print_r($allTables, true));
+            
+            $formattedTables = [];
+            foreach ($allTables as $tableRow) {
+                $tableName = array_values($tableRow)[0];
+                error_log("Processing table: $tableName");
+                
+                // Get actual row count with error handling
+                try {
+                    $rowCountResult = $this->db->selectOne("SELECT COUNT(*) as count FROM `$tableName`");
+                    $rowCount = $rowCountResult ? (int)$rowCountResult['count'] : 0;
+                    error_log("Table $tableName has $rowCount rows");
+                } catch (Exception $e) {
+                    error_log("Error counting rows for table $tableName: " . $e->getMessage());
+                    $rowCount = 0;
+                }
+                
+                $formattedTables[] = [
+                    'name' => $tableName,
+                    'rows' => $rowCount,
+                    'size' => '0.001 MB',
+                    'engine' => 'InnoDB',
+                    'collation' => 'utf8mb4_unicode_ci',
+                    'comment' => ''
+                ];
+            }
+            
+            // Sort by name
+            usort($formattedTables, function($a, $b) {
+                return strcmp($a['name'], $b['name']);
+            });
+            
+            error_log("Final tables list: " . print_r($formattedTables, true));
+            return $formattedTables;
+        } catch (Exception $e) {
+            error_log("Tables list error: " . $e->getMessage());
+            error_log("Stack trace: " . $e->getTraceAsString());
+            return [];
+        }
+    }
+    
+    private function getTableDetails($tableName) {
+        error_log("Getting details for table: $tableName");
+        
+        if (!$this->isValidTableName($tableName)) {
+            throw new Exception('Nome tabella non valido');
+        }
+        
+        try {
+            // Get actual row count
+            $rowCountResult = $this->db->selectOne("SELECT COUNT(*) as count FROM `$tableName`");
+            $rowCount = $rowCountResult ? (int)$rowCountResult['count'] : 0;
+            error_log("Table $tableName has $rowCount rows");
+            
+            // Get column details using DESCRIBE (more reliable than information_schema)
+            $columns = $this->db->select("DESCRIBE `$tableName`");
+            error_log("Table $tableName has " . count($columns) . " columns");
+            
+            // Try to get additional info from information_schema (optional)
+            $engine = 'InnoDB';
+            $collation = 'utf8mb4_unicode_ci';
+            $size = '0.001';
+            
+            try {
+                $tableInfo = $this->db->selectOne(
+                    "SELECT 
+                        engine,
+                        table_collation as collation,
+                        ROUND((data_length + index_length) / 1024 / 1024, 3) as size_mb
+                     FROM information_schema.tables 
+                     WHERE table_schema = DATABASE() AND table_name = ?",
+                    [$tableName]
+                );
+                
+                if ($tableInfo) {
+                    $engine = $tableInfo['engine'] ?? 'InnoDB';
+                    $collation = $tableInfo['collation'] ?? 'utf8mb4_unicode_ci';
+                    $size = $tableInfo['size_mb'] ?? '0.001';
+                    error_log("Got additional info: engine=$engine, collation=$collation, size={$size}MB");
+                }
+            } catch (Exception $e) {
+                error_log("Could not get additional table info (using defaults): " . $e->getMessage());
+            }
+            
+            $result = [
+                'name' => $tableName,
+                'rows' => $rowCount,
+                'size' => $size . ' MB',
+                'engine' => $engine,
+                'collation' => $collation,
+                'columns' => $columns
+            ];
+            
+            error_log("Table details result: " . print_r($result, true));
+            return $result;
+            
+        } catch (Exception $e) {
+            error_log("Error getting table details for $tableName: " . $e->getMessage());
+            throw new Exception("Errore nel recuperare i dettagli della tabella: " . $e->getMessage());
+        }
+    }
+    
+    private function executeQuery($query) {
+        // Basic security checks
+        $query = trim($query);
+        $queryType = strtoupper(substr($query, 0, 6));
+        
+        // Check for dangerous operations
+        $dangerousPatterns = [
+            '/DROP\s+DATABASE/i',
+            '/CREATE\s+DATABASE/i',
+            '/GRANT\s+/i',
+            '/REVOKE\s+/i',
+            '/LOAD_FILE\s*\(/i',
+            '/INTO\s+OUTFILE/i',
+            '/INTO\s+DUMPFILE/i'
+        ];
+        
+        foreach ($dangerousPatterns as $pattern) {
+            if (preg_match($pattern, $query)) {
+                throw new Exception('Query non consentita per motivi di sicurezza');
+            }
+        }
+        
+        try {
+            $startTime = microtime(true);
+            
+            if (in_array($queryType, ['SELECT', 'SHOW', 'DESCRI', 'EXPLAI'])) {
+                // SELECT queries
+                $results = $this->db->select($query);
+                $executionTime = round((microtime(true) - $startTime) * 1000, 2);
+                
+                return [
+                    'success' => true,
+                    'type' => 'select',
+                    'results' => $results,
+                    'count' => count($results),
+                    'execution_time' => $executionTime
+                ];
+            } else {
+                // INSERT, UPDATE, DELETE queries
+                $stmt = $this->db->query($query);
+                $affectedRows = $stmt->rowCount();
+                $executionTime = round((microtime(true) - $startTime) * 1000, 2);
+                
+                return [
+                    'success' => true,
+                    'type' => 'modify',
+                    'affected_rows' => $affectedRows,
+                    'execution_time' => $executionTime
+                ];
+            }
+            
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'error' => $e->getMessage()
+            ];
+        }
+    }
+    
+    private function isValidTableName($tableName) {
+        // Check if table name contains only allowed characters
+        return preg_match('/^[a-zA-Z0-9_]+$/', $tableName) && strlen($tableName) <= 64;
+    }
+    
+    private function exportDatabase($exportType, $format, $tables = []) {
+        try {
+            error_log("Exporting database: type=$exportType, format=$format");
+            
+            $dbName = $this->db->selectOne("SELECT DATABASE() as name")['name'] ?? 'menooelo';
+            $timestamp = date('Y-m-d_H-i-s');
+            $filename = "menooelo_export_{$timestamp}." . ($format === 'sql' ? 'sql' : $format);
+            
+            // Get tables to export
+            $allTables = $this->db->select("SHOW TABLES");
+            $tablesToExport = [];
+            
+            if ($exportType === 'custom' && !empty($tables)) {
+                $tablesToExport = $tables;
+            } else {
+                foreach ($allTables as $tableRow) {
+                    $tablesToExport[] = array_values($tableRow)[0];
+                }
+            }
+            
+            if ($format === 'sql') {
+                return $this->exportToSQL($tablesToExport, $exportType, $filename);
+            } elseif ($format === 'json') {
+                return $this->exportToJSON($tablesToExport, $filename);
+            } else {
+                throw new Exception('Formato export non supportato');
+            }
+            
+        } catch (Exception $e) {
+            error_log("Export error: " . $e->getMessage());
+            return [
+                'success' => false,
+                'error' => $e->getMessage()
+            ];
+        }
+    }
+    
+    private function exportToSQL($tables, $exportType, $filename) {
+        $sql = "-- MenooElo Database Export\n";
+        $sql .= "-- Generated on " . date('Y-m-d H:i:s') . "\n\n";
+        $sql .= "SET FOREIGN_KEY_CHECKS = 0;\n\n";
+        
+        foreach ($tables as $tableName) {
+            error_log("Exporting table: $tableName");
+            
+            try {
+                // Add DROP TABLE if requested
+                if ($exportType === 'full' || $exportType === 'structure') {
+                    $sql .= "DROP TABLE IF EXISTS `$tableName`;\n";
+                }
+                
+                // Add CREATE TABLE statement
+                if ($exportType === 'full' || $exportType === 'structure') {
+                    $createResult = $this->db->selectOne("SHOW CREATE TABLE `$tableName`");
+                    if ($createResult) {
+                        $createStatement = array_values($createResult)[1];
+                        $sql .= $createStatement . ";\n\n";
+                    }
+                }
+                
+                // Add data if requested
+                if ($exportType === 'full' || $exportType === 'data') {
+                    $rows = $this->db->select("SELECT * FROM `$tableName`");
+                    
+                    if (!empty($rows)) {
+                        $columns = array_keys($rows[0]);
+                        $columnsList = '`' . implode('`, `', $columns) . '`';
+                        
+                        foreach ($rows as $row) {
+                            $values = [];
+                            foreach ($row as $value) {
+                                if ($value === null) {
+                                    $values[] = 'NULL';
+                                } else {
+                                    $values[] = "'" . addslashes($value) . "'";
+                                }
+                            }
+                            $sql .= "INSERT INTO `$tableName` ($columnsList) VALUES (" . implode(', ', $values) . ");\n";
+                        }
+                        $sql .= "\n";
+                    }
+                }
+                
+            } catch (Exception $e) {
+                error_log("Error exporting table $tableName: " . $e->getMessage());
+                $sql .= "-- Error exporting table $tableName: " . $e->getMessage() . "\n\n";
+            }
+        }
+        
+        $sql .= "SET FOREIGN_KEY_CHECKS = 1;\n";
+        
+        // Create download
+        return [
+            'success' => true,
+            'filename' => $filename,
+            'content' => $sql,
+            'size' => strlen($sql),
+            'download_url' => $this->createDownloadFile($filename, $sql)
+        ];
+    }
+    
+    private function exportToJSON($tables, $filename) {
+        $export = [
+            'database' => 'menooelo',
+            'exported_at' => date('c'),
+            'tables' => []
+        ];
+        
+        foreach ($tables as $tableName) {
+            try {
+                $rows = $this->db->select("SELECT * FROM `$tableName`");
+                $export['tables'][$tableName] = $rows;
+            } catch (Exception $e) {
+                error_log("Error exporting table $tableName to JSON: " . $e->getMessage());
+                $export['tables'][$tableName] = ['error' => $e->getMessage()];
+            }
+        }
+        
+        $jsonContent = json_encode($export, JSON_PRETTY_PRINT);
+        
+        return [
+            'success' => true,
+            'filename' => $filename,
+            'content' => $jsonContent,
+            'size' => strlen($jsonContent),
+            'download_url' => $this->createDownloadFile($filename, $jsonContent)
+        ];
+    }
+    
+    private function backupDatabase($backupType) {
+        try {
+            $timestamp = date('Y-m-d_H-i-s');
+            $filename = "menooelo_backup_{$backupType}_{$timestamp}.sql";
+            
+            return $this->exportDatabase($backupType, 'sql');
+            
+        } catch (Exception $e) {
+            error_log("Backup error: " . $e->getMessage());
+            return [
+                'success' => false,
+                'error' => $e->getMessage()
+            ];
+        }
+    }
+    
+    private function createDownloadFile($filename, $content) {
+        // Create temporary download file
+        $downloadDir = UPLOADS_PATH . 'downloads/';
+        if (!is_dir($downloadDir)) {
+            mkdir($downloadDir, 0755, true);
+        }
+        
+        $filepath = $downloadDir . $filename;
+        file_put_contents($filepath, $content);
+        
+        // Return URL for download
+        return BASE_URL . '/uploads/downloads/' . $filename;
+    }
 }
 ?>
