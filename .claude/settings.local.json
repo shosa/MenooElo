@@ -6,7 +6,9 @@
       "Bash(touch:*)",
       "Bash(find:*)",
       "Bash(sed:*)",
-      "Bash(php:*)"
+      "Bash(php:*)",
+      "Bash(cat:*)",
+      "Bash(grep:*)"
     ],
     "deny": [],
     "ask": []

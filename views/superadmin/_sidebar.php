@@ -32,7 +32,7 @@
         <div class="p-6 border-b border-slate-700/50 bg-gradient-to-r from-blue-600/20 to-purple-600/20 backdrop-blur-sm">
             <div class="text-center">
                 <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center mx-auto mb-3 shadow-lg">
-                    <i class="fas fa-crown text-white text-xl"></i>
+                    <i class="fas fa-utensils text-white text-xl"></i>
                 </div>
                 <h1 class="text-white text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">MenooElo</h1>
                 <p class="text-slate-300 text-sm mt-1 font-medium">Super Admin Panel</p>

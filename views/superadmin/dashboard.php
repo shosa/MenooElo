@@ -53,10 +53,6 @@ $content = ob_start();
                         </div>
                         <div class="flex items-center justify-between">
                             <span class="text-slate-600 font-medium">Totali</span>
-                            <div class="flex items-center gap-1 text-blue-600 text-sm">
-                                <i class="fas fa-arrow-up text-xs"></i>
-                                <span>+12%</span>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -75,10 +71,6 @@ $content = ob_start();
                         </div>
                         <div class="flex items-center justify-between">
                             <span class="text-slate-600 font-medium">Ristoranti</span>
-                            <div class="flex items-center gap-1 text-green-600 text-sm">
-                                <i class="fas fa-arrow-up text-xs"></i>
-                                <span>+8%</span>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -97,10 +89,6 @@ $content = ob_start();
                         </div>
                         <div class="flex items-center justify-between">
                             <span class="text-slate-600 font-medium">Totali</span>
-                            <div class="flex items-center gap-1 text-purple-600 text-sm">
-                                <i class="fas fa-arrow-up text-xs"></i>
-                                <span>+3%</span>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -119,10 +107,6 @@ $content = ob_start();
                         </div>
                         <div class="flex items-center justify-between">
                             <span class="text-slate-600 font-medium">Totali</span>
-                            <div class="flex items-center gap-1 text-amber-600 text-sm">
-                                <i class="fas fa-arrow-up text-xs"></i>
-                                <span>+15%</span>
-                            </div>
                         </div>
                     </div>
                 </div>

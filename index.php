@@ -60,6 +60,8 @@ $router->addRoute('/superadmin/admin/delete/{id}', 'controllers/SuperAdminContro
 $router->addRoute('/superadmin/settings', 'controllers/SuperAdminController.php', 'systemSettings');
 $router->addRoute('/superadmin/database', 'controllers/SuperAdminController.php', 'database');
 $router->addRoute('/superadmin/database-api', 'controllers/SuperAdminController.php', 'databaseApi');
+$router->addRoute('/superadmin/database/query', 'controllers/SuperAdminController.php', 'databaseQuery');
+$router->addRoute('/superadmin/database/maintenance', 'controllers/SuperAdminController.php', 'databaseMaintenance');
 $router->addRoute('/superadmin/file-manager', 'controllers/SuperAdminController.php', 'fileManager');
 $router->addRoute('/superadmin/file-manager-api', 'controllers/SuperAdminController.php', 'fileManagerApi');
 $router->addRoute('/superadmin/upload-stats', 'controllers/SuperAdminController.php', 'uploadStats');

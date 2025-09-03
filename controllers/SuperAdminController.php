@@ -16,7 +16,7 @@ class SuperAdminController extends BaseController {
         $recent_restaurants = $this->db->select(
             "SELECT r.*, COUNT(ra.id) as admin_count 
              FROM restaurants r 
-             LEFT JOIN restaurant_admins ra ON r.id = ra.restaurant_id 
+             LEFT JOIN restaurant_admins ra ON r.id = ra.restaurant_id AND ra.is_active = 1 
              GROUP BY r.id 
              ORDER BY r.created_at DESC 
              LIMIT 10"
@@ -104,7 +104,7 @@ class SuperAdminController extends BaseController {
                     COUNT(ra.id) as admin_count,
                     COUNT(mi.id) as menu_items_count
              FROM restaurants r 
-             LEFT JOIN restaurant_admins ra ON r.id = ra.restaurant_id 
+             LEFT JOIN restaurant_admins ra ON r.id = ra.restaurant_id AND ra.is_active = 1 
              LEFT JOIN menu_items mi ON r.id = mi.restaurant_id 
              WHERE $whereClause
              GROUP BY r.id 
@@ -2335,6 +2335,284 @@ class SuperAdminController extends BaseController {
             'total_size' => $totalSize,
             'errors' => $errors
         ];
+    }
+
+    /**
+     * Handle database query execution requests
+     * This method is called by the frontend JavaScript to execute SQL queries safely
+     */
+    public function databaseQuery() {
+        $this->auth->requireSuperAdmin();
+        
+        header('Content-Type: application/json');
+        
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['success' => false, 'error' => 'Metodo non consentito']);
+            return;
+        }
+        
+        try {
+            $rawInput = file_get_contents('php://input');
+            $input = json_decode($rawInput, true);
+            
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                echo json_encode(['success' => false, 'error' => 'JSON non valido: ' . json_last_error_msg()]);
+                return;
+            }
+            
+            $query = trim($input['query'] ?? '');
+            $csrfToken = $input['csrf_token'] ?? '';
+            
+            // Validate CSRF token
+            if (!$this->validateCsrf($csrfToken)) {
+                echo json_encode(['success' => false, 'error' => 'Token CSRF non valido']);
+                return;
+            }
+            
+            if (empty($query)) {
+                echo json_encode(['success' => false, 'error' => 'Query mancante']);
+                return;
+            }
+            
+            // Execute the query using the existing method
+            $result = $this->executeQuery($query);
+            echo json_encode($result);
+            
+            // Log the query execution
+            $this->logActivity('database_query_executed', 'super_admin', null, [
+                'query' => substr($query, 0, 200), // Log first 200 chars for security
+                'success' => $result['success'] ?? false
+            ]);
+            
+        } catch (Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+    
+    /**
+     * Handle database maintenance operations
+     * This method is called by the frontend JavaScript to perform maintenance tasks
+     */
+    public function databaseMaintenance() {
+        $this->auth->requireSuperAdmin();
+        
+        header('Content-Type: application/json');
+        
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['success' => false, 'error' => 'Metodo non consentito']);
+            return;
+        }
+        
+        try {
+            $rawInput = file_get_contents('php://input');
+            $input = json_decode($rawInput, true);
+            
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                echo json_encode(['success' => false, 'error' => 'JSON non valido: ' . json_last_error_msg()]);
+                return;
+            }
+            
+            $operation = $input['operation'] ?? '';
+            $csrfToken = $input['csrf_token'] ?? '';
+            
+            // Validate CSRF token
+            if (!$this->validateCsrf($csrfToken)) {
+                echo json_encode(['success' => false, 'error' => 'Token CSRF non valido']);
+                return;
+            }
+            
+            if (empty($operation)) {
+                echo json_encode(['success' => false, 'error' => 'Operazione mancante']);
+                return;
+            }
+            
+            // Perform the requested maintenance operation
+            $result = $this->performMaintenanceOperation($operation);
+            echo json_encode($result);
+            
+            // Log the maintenance operation
+            $this->logActivity('database_maintenance', 'super_admin', null, [
+                'operation' => $operation,
+                'success' => $result['success'] ?? false
+            ]);
+            
+        } catch (Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+    
+    /**
+     * Perform database maintenance operations safely
+     */
+    private function performMaintenanceOperation($operation) {
+        try {
+            switch ($operation) {
+                case 'optimize':
+                    return $this->optimizeAllTables();
+                    
+                case 'cleanup':
+                    return $this->cleanupDatabase();
+                    
+                case 'repair':
+                    return $this->repairAllTables();
+                    
+                default:
+                    throw new Exception('Operazione di manutenzione non riconosciuta: ' . $operation);
+            }
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'error' => $e->getMessage()
+            ];
+        }
+    }
+    
+    /**
+     * Optimize all database tables
+     */
+    private function optimizeAllTables() {
+        try {
+            $tables = $this->db->select("SHOW TABLES");
+            $optimizedTables = [];
+            $errors = [];
+            
+            foreach ($tables as $table) {
+                $tableName = array_values($table)[0];
+                
+                try {
+                    $this->db->query("OPTIMIZE TABLE `$tableName`");
+                    $optimizedTables[] = $tableName;
+                } catch (Exception $e) {
+                    $errors[] = "Errore ottimizzando $tableName: " . $e->getMessage();
+                }
+            }
+            
+            return [
+                'success' => true,
+                'message' => 'Ottimizzazione completata',
+                'optimized_tables' => count($optimizedTables),
+                'total_tables' => count($tables),
+                'errors' => $errors
+            ];
+            
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'error' => 'Errore durante l\'ottimizzazione: ' . $e->getMessage()
+            ];
+        }
+    }
+    
+    /**
+     * Clean up database by removing old logs and temporary data
+     */
+    private function cleanupDatabase() {
+        try {
+            $cleanupActions = [];
+            $errors = [];
+            
+            // Clean old activity logs (older than 90 days)
+            try {
+                $stmt = $this->db->query("DELETE FROM activity_logs WHERE created_at < DATE_SUB(NOW(), INTERVAL 90 DAY)");
+                $deletedLogs = $stmt->rowCount();
+                $cleanupActions[] = "Eliminati $deletedLogs log di attività vecchi";
+            } catch (Exception $e) {
+                $errors[] = "Errore pulizia log: " . $e->getMessage();
+            }
+            
+            // Clean up any session data that might be stored (if table exists)
+            try {
+                $this->db->query("DELETE FROM sessions WHERE last_activity < UNIX_TIMESTAMP(DATE_SUB(NOW(), INTERVAL 24 HOUR))");
+                $cleanupActions[] = "Sessioni scadute rimosse";
+            } catch (Exception $e) {
+                // Table might not exist, ignore this error
+            }
+            
+            // Optimize tables after cleanup
+            try {
+                $tables = $this->db->select("SHOW TABLES");
+                foreach ($tables as $table) {
+                    $tableName = array_values($table)[0];
+                    $this->db->query("OPTIMIZE TABLE `$tableName`");
+                }
+                $cleanupActions[] = "Tabelle ottimizzate dopo la pulizia";
+            } catch (Exception $e) {
+                $errors[] = "Errore ottimizzazione post-pulizia: " . $e->getMessage();
+            }
+            
+            return [
+                'success' => true,
+                'message' => 'Pulizia database completata',
+                'actions_performed' => $cleanupActions,
+                'errors' => $errors
+            ];
+            
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'error' => 'Errore durante la pulizia: ' . $e->getMessage()
+            ];
+        }
+    }
+    
+    /**
+     * Repair all database tables
+     */
+    private function repairAllTables() {
+        try {
+            $tables = $this->db->select("SHOW TABLES");
+            $repairedTables = [];
+            $errors = [];
+            
+            foreach ($tables as $table) {
+                $tableName = array_values($table)[0];
+                
+                try {
+                    // Check table first
+                    $checkResult = $this->db->select("CHECK TABLE `$tableName`");
+                    $needsRepair = false;
+                    
+                    foreach ($checkResult as $result) {
+                        if (isset($result['Msg_text']) && 
+                            (strpos($result['Msg_text'], 'corrupt') !== false || 
+                             strpos($result['Msg_text'], 'error') !== false)) {
+                            $needsRepair = true;
+                            break;
+                        }
+                    }
+                    
+                    if ($needsRepair) {
+                        $this->db->query("REPAIR TABLE `$tableName`");
+                        $repairedTables[] = $tableName;
+                    }
+                } catch (Exception $e) {
+                    $errors[] = "Errore riparando $tableName: " . $e->getMessage();
+                }
+            }
+            
+            return [
+                'success' => true,
+                'message' => 'Controllo e riparazione completati',
+                'repaired_tables' => count($repairedTables),
+                'tables_needing_repair' => $repairedTables,
+                'total_tables_checked' => count($tables),
+                'errors' => $errors
+            ];
+            
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'error' => 'Errore durante la riparazione: ' . $e->getMessage()
+            ];
+        }
     }
 
     // Helper method for logging activities
