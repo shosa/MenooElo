@@ -2,323 +2,223 @@
 $content = ob_start(); 
 ?>
 
-<div class="flex min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 overflow-x-hidden" x-data="analyticsManager()">
+<div class="flex min-h-screen bg-gray-100">
     <?php include 'views/superadmin/_sidebar.php'; ?>
     
-    <div class="flex-1 lg:ml-64 min-w-0">
-        <!-- Modern Header -->
-        <div class="bg-white/80 backdrop-blur-xl border-b border-white/20 shadow-sm sticky top-0 z-30">
-            <div class="px-6 py-6">
-                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                    <div>
-                        <h1 class="text-3xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
-                            Analytics Dashboard
-                        </h1>
-                        <p class="text-slate-600 mt-2 flex items-center gap-2">
-                            <i class="fas fa-chart-line text-emerald-500"></i>
-                            Panoramica completa e statistiche del sistema MenooElo
-                        </p>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <select x-model="timeRange" @change="updateStats()" 
-                                class="px-4 py-2 bg-white/70 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 transition-all duration-200">
-                            <option value="7">Ultimi 7 giorni</option>
-                            <option value="30">Ultimi 30 giorni</option>
-                            <option value="90">Ultimi 3 mesi</option>
-                            <option value="365">Ultimo anno</option>
-                        </select>
-                    </div>
+    <div class="flex-1 lg:ml-64">
+        <!-- Header -->
+        <div class="bg-white px-6 py-4 border-b border-gray-200">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">Analytics</h1>
+                    <p class="text-gray-600 mt-1">Panoramica e statistiche del sistema MenooElo</p>
                 </div>
             </div>
         </div>
         
         <!-- Main Content -->
         <div class="p-6">
-            <!-- Enhanced Stats Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <div class="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-6 shadow-xl transform hover:scale-105 transition-all duration-300">
-                    <div class="flex items-center justify-between text-white">
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+                <div class="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-xl p-6 shadow-lg">
+                    <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-blue-100 text-sm font-medium mb-2">Ristoranti Totali</p>
-                            <p class="text-4xl font-bold"><?= $stats['total_restaurants'] ?></p>
+                            <p class="text-blue-100 text-sm font-medium">Ristoranti Totali</p>
+                            <p class="text-3xl font-bold text-white"><?= $stats['total_restaurants'] ?></p>
                         </div>
-                        <div class="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-lg">
-                            <i class="fas fa-store text-3xl"></i>
+                        <div class="bg-white bg-opacity-20 p-3 rounded-lg">
+                            <i class="fas fa-store text-2xl text-white"></i>
                         </div>
                     </div>
                 </div>
-
-                <div class="bg-gradient-to-br from-emerald-500 to-green-600 rounded-2xl p-6 shadow-xl transform hover:scale-105 transition-all duration-300">
-                    <div class="flex items-center justify-between text-white">
+                
+                <div class="bg-gradient-to-br from-green-500 to-green-600 text-white rounded-xl p-6 shadow-lg">
+                    <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-emerald-100 text-sm font-medium mb-2">Admin Ristoranti</p>
-                            <p class="text-4xl font-bold"><?= $stats['total_restaurant_admins'] ?></p>
+                            <p class="text-green-100 text-sm font-medium">Ristoranti Attivi</p>
+                            <p class="text-3xl font-bold text-white"><?= $stats['active_restaurants'] ?></p>
                         </div>
-                        <div class="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-lg">
-                            <i class="fas fa-user-shield text-3xl"></i>
+                        <div class="bg-white bg-opacity-20 p-3 rounded-lg">
+                            <i class="fas fa-check-circle text-2xl text-white"></i>
                         </div>
                     </div>
                 </div>
-
-                <div class="bg-gradient-to-br from-purple-500 to-violet-600 rounded-2xl p-6 shadow-xl transform hover:scale-105 transition-all duration-300">
-                    <div class="flex items-center justify-between text-white">
+                
+                <div class="bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-xl p-6 shadow-lg">
+                    <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-purple-100 text-sm font-medium mb-2">Menu Items Totali</p>
-                            <p class="text-4xl font-bold"><?= $stats['total_menu_items'] ?></p>
+                            <p class="text-purple-100 text-sm font-medium">Admin Totali</p>
+                            <p class="text-3xl font-bold text-white"><?= $stats['total_admins'] ?></p>
                         </div>
-                        <div class="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-lg">
-                            <i class="fas fa-utensils text-3xl"></i>
+                        <div class="bg-white bg-opacity-20 p-3 rounded-lg">
+                            <i class="fas fa-users text-2xl text-white"></i>
                         </div>
                     </div>
                 </div>
-
-                <div class="bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl p-6 shadow-xl transform hover:scale-105 transition-all duration-300">
-                    <div class="flex items-center justify-between text-white">
+                
+                <div class="bg-gradient-to-br from-yellow-500 to-yellow-600 text-white rounded-xl p-6 shadow-lg">
+                    <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-orange-100 text-sm font-medium mb-2">Ristoranti Attivi</p>
-                            <p class="text-4xl font-bold"><?= $stats['active_restaurants'] ?></p>
+                            <p class="text-yellow-100 text-sm font-medium">Categorie</p>
+                            <p class="text-3xl font-bold text-white"><?= $stats['total_categories'] ?></p>
                         </div>
-                        <div class="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-lg">
-                            <i class="fas fa-chart-line text-3xl"></i>
+                        <div class="bg-white bg-opacity-20 p-3 rounded-lg">
+                            <i class="fas fa-list text-2xl text-white"></i>
                         </div>
                     </div>
                 </div>
-            </div>
-
-            <!-- Charts Section -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                <!-- Registrations Chart -->
-                <div class="bg-white/80 backdrop-blur-xl rounded-2xl shadow-sm border border-white/20 p-6">
-                    <div class="flex items-center justify-between mb-6">
+                
+                <div class="bg-gradient-to-br from-red-500 to-red-600 text-white rounded-xl p-6 shadow-lg">
+                    <div class="flex items-center justify-between">
                         <div>
-                            <h3 class="text-xl font-bold text-slate-900">Nuove Registrazioni</h3>
-                            <p class="text-sm text-slate-500 mt-1">Trend registrazioni ristoranti</p>
+                            <p class="text-red-100 text-sm font-medium">Piatti Totali</p>
+                            <p class="text-3xl font-bold text-white"><?= $stats['total_items'] ?></p>
                         </div>
-                        <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center shadow-lg">
-                            <i class="fas fa-chart-area text-white"></i>
-                        </div>
-                    </div>
-                    
-                    <div class="h-64 flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl">
-                        <div class="text-center">
-                            <i class="fas fa-chart-line text-4xl text-blue-500 mb-4"></i>
-                            <p class="text-slate-600 font-medium">Grafici Avanzati</p>
-                            <p class="text-sm text-slate-500 mt-2">Funzionalità disponibile in un prossimo aggiornamento</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Activity Chart -->
-                <div class="bg-white/80 backdrop-blur-xl rounded-2xl shadow-sm border border-white/20 p-6">
-                    <div class="flex items-center justify-between mb-6">
-                        <div>
-                            <h3 class="text-xl font-bold text-slate-900">Attività Sistema</h3>
-                            <p class="text-sm text-slate-500 mt-1">Log attività ultimi giorni</p>
-                        </div>
-                        <div class="w-12 h-12 bg-gradient-to-br from-emerald-500 to-green-500 rounded-xl flex items-center justify-center shadow-lg">
-                            <i class="fas fa-activity text-white"></i>
-                        </div>
-                    </div>
-                    
-                    <div class="h-64 flex items-center justify-center bg-gradient-to-br from-emerald-50 to-green-50 rounded-xl">
-                        <div class="text-center">
-                            <i class="fas fa-pulse text-4xl text-emerald-500 mb-4"></i>
-                            <p class="text-slate-600 font-medium">Grafici Avanzati</p>
-                            <p class="text-sm text-slate-500 mt-2">Funzionalità disponibile in un prossimo aggiornamento</p>
+                        <div class="bg-white bg-opacity-20 p-3 rounded-lg">
+                            <i class="fas fa-utensils text-2xl text-white"></i>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Recent Activity & Top Restaurants -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <!-- Recent Activity -->
-                <div class="bg-white/80 backdrop-blur-xl rounded-2xl shadow-sm border border-white/20 p-6">
-                    <div class="flex items-center justify-between mb-6">
-                        <div>
-                            <h3 class="text-xl font-bold text-slate-900">Attività Recenti</h3>
-                            <p class="text-sm text-slate-500 mt-1">Ultime azioni nel sistema</p>
-                        </div>
-                        <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-violet-500 rounded-xl flex items-center justify-center shadow-lg">
-                            <i class="fas fa-history text-white"></i>
-                        </div>
-                    </div>
+                <!-- Top Restaurants -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
+                        <i class="fas fa-trophy text-yellow-600"></i>
+                        Ristoranti più Attivi
+                    </h2>
                     
+                    <?php if (empty($top_restaurants)): ?>
+                    <div class="text-center py-8">
+                        <i class="fas fa-chart-bar text-4xl text-gray-300 mb-3"></i>
+                        <p class="text-gray-500">Nessun dato disponibile</p>
+                    </div>
+                    <?php else: ?>
                     <div class="space-y-4">
-                        <?php if (!empty($recent_activity)): ?>
-                            <?php foreach (array_slice($recent_activity, 0, 5) as $activity): ?>
-                            <div class="flex items-start gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
-                                <div class="w-10 h-10 bg-gradient-to-br from-slate-400 to-slate-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                                    <i class="fas fa-user text-white text-sm"></i>
+                        <?php foreach ($top_restaurants as $index => $restaurant): ?>
+                        <div class="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
+                            <div class="flex-shrink-0">
+                                <?php if ($index === 0): ?>
+                                <div class="w-8 h-8 bg-yellow-500 text-white rounded-full flex items-center justify-center font-bold text-sm">
+                                    1
                                 </div>
-                                <div class="flex-1 min-w-0">
-                                    <p class="text-sm font-medium text-slate-900">
-                                        <?= htmlspecialchars($activity['description']) ?>
-                                    </p>
-                                    <div class="flex items-center gap-2 mt-1">
-                                        <span class="text-xs text-slate-500">
-                                            <?= date('d/m/Y H:i', strtotime($activity['created_at'])) ?>
-                                        </span>
-                                        <?php if ($activity['restaurant_name']): ?>
-                                        <span class="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full">
-                                            <?= htmlspecialchars($activity['restaurant_name']) ?>
-                                        </span>
-                                        <?php endif; ?>
-                                    </div>
+                                <?php elseif ($index === 1): ?>
+                                <div class="w-8 h-8 bg-gray-400 text-white rounded-full flex items-center justify-center font-bold text-sm">
+                                    2
+                                </div>
+                                <?php elseif ($index === 2): ?>
+                                <div class="w-8 h-8 bg-yellow-700 text-white rounded-full flex items-center justify-center font-bold text-sm">
+                                    3
+                                </div>
+                                <?php else: ?>
+                                <div class="w-8 h-8 bg-gray-300 text-gray-700 rounded-full flex items-center justify-center font-bold text-sm">
+                                    <?= $index + 1 ?>
+                                </div>
+                                <?php endif; ?>
+                            </div>
+                            <div class="flex-1">
+                                <div class="font-medium text-gray-900">
+                                    <?= htmlspecialchars($restaurant['name']) ?>
+                                </div>
+                                <div class="text-sm text-gray-500">
+                                    <?= $restaurant['items_count'] ?> piatti nel menu
                                 </div>
                             </div>
-                            <?php endforeach; ?>
-                        <?php else: ?>
-                        <div class="text-center py-8">
-                            <i class="fas fa-clock text-3xl text-slate-300 mb-3"></i>
-                            <p class="text-slate-500">Nessuna attività recente</p>
+                            <div class="text-right">
+                                <a href="<?= BASE_URL ?>/restaurant/<?= $restaurant['slug'] ?>" 
+                                   class="text-blue-600 hover:text-blue-800 text-sm"
+                                   target="_blank">
+                                    Visualizza <i class="fas fa-external-link-alt ml-1"></i>
+                                </a>
+                            </div>
                         </div>
-                        <?php endif; ?>
+                        <?php endforeach; ?>
                     </div>
-                    
-                    <div class="mt-6 text-center">
-                        <a href="<?= BASE_URL ?>/superadmin/logs" 
-                           class="inline-flex items-center gap-2 px-4 py-2 text-purple-600 hover:text-purple-700 font-medium transition-colors duration-200">
-                            <span>Vedi tutti i log</span>
-                            <i class="fas fa-arrow-right"></i>
-                        </a>
-                    </div>
+                    <?php endif; ?>
                 </div>
 
-                <!-- Top Restaurants -->
-                <div class="bg-white/80 backdrop-blur-xl rounded-2xl shadow-sm border border-white/20 p-6">
-                    <div class="flex items-center justify-between mb-6">
-                        <div>
-                            <h3 class="text-xl font-bold text-slate-900">Top Ristoranti</h3>
-                            <p class="text-sm text-slate-500 mt-1">Ristoranti più attivi</p>
-                        </div>
-                        <div class="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-500 rounded-xl flex items-center justify-center shadow-lg">
-                            <i class="fas fa-crown text-white"></i>
-                        </div>
-                    </div>
+                <!-- Monthly Growth -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
+                        <i class="fas fa-chart-line text-green-600"></i>
+                        Crescita Mensile
+                    </h2>
                     
+                    <?php if (empty($monthly_growth)): ?>
+                    <div class="text-center py-8">
+                        <i class="fas fa-chart-line text-4xl text-gray-300 mb-3"></i>
+                        <p class="text-gray-500">Nessun dato di crescita disponibile</p>
+                    </div>
+                    <?php else: ?>
                     <div class="space-y-4">
-                        <?php if (!empty($top_restaurants)): ?>
-                            <?php foreach ($top_restaurants as $index => $restaurant): ?>
-                            <div class="flex items-center gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
-                                <div class="w-10 h-10 bg-gradient-to-br from-orange-400 to-red-400 rounded-lg flex items-center justify-center flex-shrink-0">
-                                    <span class="text-white font-bold text-sm"><?= $index + 1 ?></span>
-                                </div>
-                                <div class="flex-1 min-w-0">
-                                    <p class="font-semibold text-slate-900 truncate">
-                                        <?= htmlspecialchars($restaurant['name']) ?>
-                                    </p>
-                                    <div class="flex items-center gap-4 mt-1 text-xs text-slate-500">
-                                        <span class="flex items-center gap-1">
-                                            <i class="fas fa-utensils"></i>
-                                            <?= $restaurant['menu_items_count'] ?> piatti
-                                        </span>
-                                        <span class="flex items-center gap-1">
-                                            <i class="fas fa-calendar"></i>
-                                            <?= date('d/m/Y', strtotime($restaurant['created_at'])) ?>
-                                        </span>
-                                    </div>
-                                </div>
-                                <div class="text-right">
-                                    <?php if ($restaurant['is_active']): ?>
-                                    <span class="inline-flex items-center px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
-                                        <div class="w-2 h-2 bg-green-500 rounded-full mr-1"></div>
-                                        Attivo
-                                    </span>
-                                    <?php else: ?>
-                                    <span class="inline-flex items-center px-2 py-1 bg-red-100 text-red-700 text-xs font-medium rounded-full">
-                                        <div class="w-2 h-2 bg-red-500 rounded-full mr-1"></div>
-                                        Inattivo
-                                    </span>
-                                    <?php endif; ?>
-                                </div>
+                        <?php 
+                        $max_count = max(array_column($monthly_growth, 'count'));
+                        foreach ($monthly_growth as $month): 
+                        $percentage = $max_count > 0 ? ($month['count'] / $max_count) * 100 : 0;
+                        ?>
+                        <div class="space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-medium text-gray-700">
+                                    <?= date('M Y', strtotime($month['month'] . '-01')) ?>
+                                </span>
+                                <span class="text-sm text-gray-600">
+                                    <?= $month['count'] ?> ristoranti
+                                </span>
                             </div>
-                            <?php endforeach; ?>
-                        <?php else: ?>
-                        <div class="text-center py-8">
-                            <i class="fas fa-store text-3xl text-slate-300 mb-3"></i>
-                            <p class="text-slate-500">Nessun ristorante registrato</p>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-green-500 h-2 rounded-full transition-all duration-300" 
+                                     style="width: <?= $percentage ?>%"></div>
+                            </div>
                         </div>
-                        <?php endif; ?>
+                        <?php endforeach; ?>
+                    </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <!-- System Overview -->
+            <div class="mt-6 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
+                    <i class="fas fa-info-circle text-blue-600"></i>
+                    Panoramica Sistema
+                </h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="text-center p-6 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl">
+                        <div class="mb-4">
+                            <i class="fas fa-percentage text-3xl text-blue-600"></i>
+                        </div>
+                        <div class="text-2xl font-bold text-blue-700">
+                            <?= $stats['total_restaurants'] > 0 ? round(($stats['active_restaurants'] / $stats['total_restaurants']) * 100, 1) : 0 ?>%
+                        </div>
+                        <div class="text-sm text-blue-600 mt-1">Ristoranti attivi</div>
                     </div>
                     
-                    <div class="mt-6 text-center">
-                        <a href="<?= BASE_URL ?>/superadmin/restaurants" 
-                           class="inline-flex items-center gap-2 px-4 py-2 text-orange-600 hover:text-orange-700 font-medium transition-colors duration-200">
-                            <span>Vedi tutti i ristoranti</span>
-                            <i class="fas fa-arrow-right"></i>
-                        </a>
+                    <div class="text-center p-6 bg-gradient-to-br from-green-50 to-green-100 rounded-xl">
+                        <div class="mb-4">
+                            <i class="fas fa-calculator text-3xl text-green-600"></i>
+                        </div>
+                        <div class="text-2xl font-bold text-green-700">
+                            <?= $stats['total_restaurants'] > 0 ? round($stats['total_items'] / $stats['total_restaurants'], 1) : 0 ?>
+                        </div>
+                        <div class="text-sm text-green-600 mt-1">Piatti per ristorante (media)</div>
+                    </div>
+                    
+                    <div class="text-center p-6 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl">
+                        <div class="mb-4">
+                            <i class="fas fa-users-cog text-3xl text-purple-600"></i>
+                        </div>
+                        <div class="text-2xl font-bold text-purple-700">
+                            <?= $stats['total_restaurants'] > 0 ? round($stats['total_admins'] / $stats['total_restaurants'], 1) : 0 ?>
+                        </div>
+                        <div class="text-sm text-purple-600 mt-1">Admin per ristorante (media)</div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
-
-<style>
-    [x-cloak] { display: none !important; }
-</style>
-
-<script>
-function analyticsManager() {
-    return {
-        timeRange: '30',
-        
-        updateStats() {
-            this.showNotification(`Aggiornamento statistiche per ultimi ${this.timeRange} giorni...`, 'info');
-            
-            fetch(`<?= BASE_URL ?>/superadmin/analytics/update`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    timeRange: this.timeRange,
-                    csrf_token: '<?= $_SESSION['csrf_token'] ?? '' ?>'
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    this.showNotification('Statistiche aggiornate con successo', 'success');
-                    setTimeout(() => window.location.reload(), 1000);
-                } else {
-                    this.showNotification('Errore durante l\'aggiornamento', 'error');
-                }
-            })
-            .catch(error => {
-                this.showNotification('Errore di connessione', 'error');
-            });
-        },
-        
-        
-        showNotification(message, type = 'info') {
-            const notification = document.createElement('div');
-            notification.className = `fixed top-4 right-4 z-50 px-6 py-4 rounded-xl shadow-xl text-white transform transition-all duration-300 ${
-                type === 'success' ? 'bg-gradient-to-r from-green-500 to-emerald-500' : 
-                type === 'error' ? 'bg-gradient-to-r from-red-500 to-pink-500' : 
-                'bg-gradient-to-r from-blue-500 to-indigo-500'
-            }`;
-            
-            notification.innerHTML = `
-                <div class="flex items-center gap-3">
-                    <i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'}"></i>
-                    <span class="font-medium">${message}</span>
-                </div>
-            `;
-            
-            document.body.appendChild(notification);
-            
-            setTimeout(() => notification.style.transform = 'translateX(0)', 10);
-            
-            setTimeout(() => {
-                notification.style.transform = 'translateX(100%)';
-                setTimeout(() => notification.remove(), 300);
-            }, 3000);
-        }
-    }
-}
-</script>
 
 <?php 
 $content = ob_get_clean();

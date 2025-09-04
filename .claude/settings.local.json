@@ -8,7 +8,9 @@
       "Bash(sed:*)",
       "Bash(php:*)",
       "Bash(cat:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(rg:*)",
+      "Read(C:\\xampp\\apache\\logs/**)"
     ],
     "deny": [],
     "ask": []
